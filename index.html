@@ -59,6 +59,21 @@
   .resbox{border:1px solid var(--line); border-radius:4px; padding:9px 8px; text-align:center;}
   .resbox span{display:block; font-size:10px; color:var(--ink-soft); margin-bottom:3px;}
   .resbox b{font-family:'JetBrains Mono', monospace; font-size:15px;}
+  .rescalc{
+    margin-top:16px; padding-top:14px; border-top:1px dashed var(--line);
+    font-size:12.5px; color:#333; line-height:1.7;
+  }
+  .rescalc .calcline{font-family:'JetBrains Mono', monospace; font-size:12px; background:#f7f7f7; padding:7px 9px; border-radius:4px; margin:6px 0;}
+  .rescalc b{color:var(--ink);}
+
+  .marketvalue-box{
+    margin:0 20px 22px; padding:18px 16px; text-align:center;
+    background:var(--red-soft); border:1px dashed var(--red); border-radius:6px;
+  }
+  .mv-label{font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:0.03em; color:#8F0817; margin-bottom:8px;}
+  .mv-number{font-size:28px; font-weight:800; font-family:'JetBrains Mono', monospace; color:var(--red); line-height:1.1;}
+  .permablur{filter:blur(7px); user-select:none; pointer-events:none;}
+  .mv-caption{font-size:11.5px; color:#6e3015; margin-top:10px; line-height:1.5; max-width:380px; margin-left:auto; margin-right:auto;}
 
   .overlay{
     position:absolute; inset:0; background:rgba(255,255,255,0.5);
@@ -146,7 +161,15 @@
         <div class="resbox"><span>Densidad</span><b id="r_dens">—</b></div>
         <div class="resbox"><span>Sup. lote</span><b id="r_sup">—</b></div>
       </div>
+      <div class="rescalc" id="rescalc"></div>
     </div>
+
+    <div class="marketvalue-box">
+      <div class="mv-label">💰 Valor de mercado estimado de tu lote</div>
+      <div class="mv-number permablur" id="mvnum">U$D 000.000</div>
+      <div class="mv-caption">Este valor surge de cruzar tu potencial constructivo con los precios actuales de la zona — lo calcula y confirma personalmente un agente CADEMA. Dejá tus datos y te contactamos con el número exacto.</div>
+    </div>
+
     <div class="overlay" id="overlay">
       <div class="overlay-card">
         <div class="lockicon">🔒</div>
@@ -375,6 +398,22 @@ $('btnCalc').addEventListener('click', () => {
   $('r_fot').textContent = fot!==null ? fmt(fot,2) : 'N/D';
   $('r_dens').textContent = dens!==null ? fmt(dens,0) : 'N/D';
   $('r_sup').textContent = fmt(sup,0)+' m²';
+
+  const calcBox = $('rescalc');
+  if(potencial!==null){
+    calcBox.innerHTML = `
+      <p style="margin:0 0 8px;">¿Cómo se calculó? El <b>FOT</b> (Factor de Ocupación Total) indica cuántas veces la superficie del lote se puede construir en total, sumando todos los pisos. En esta zona, el FOT es de <b>${fmt(fot,2)}</b>.</p>
+      <div class="calcline">${fmt(sup,0)} m² (tu lote) &nbsp;×&nbsp; ${fmt(fot,2)} (FOT) &nbsp;=&nbsp; <b>${fmt(potencial,0)} m²</b></div>
+      <p style="margin:8px 0 0;">Este resultado es el escenario base de la zona, <b>sin premios de construcción</b> (retiros, ancho de parcela, etc.) — esos premios pueden aumentar el potencial hasta un 70% adicional según cómo se diseñe el proyecto. Un agente CADEMA puede calcular el número exacto con los detalles de tu lote.</p>
+    `;
+  } else {
+    calcBox.innerHTML = `<p style="margin:0;">Esta zona no tiene un FOT general definido en la tabla — un agente CADEMA puede revisar la Ficha de Zona específica para darte el número exacto.</p>`;
+  }
+
+  // Número decorativo, nunca se revela — el objetivo es generar intriga, no calcular un valor real.
+  // (Si en algún momento querés que sea un número de verdad, avisame y lo conectamos a un $/m² real.)
+  const mvPlaceholder = potencial!==null ? Math.round(potencial * 850 / 1000) * 1000 : 185000;
+  $('mvnum').textContent = 'U$D ' + fmt(mvPlaceholder, 0);
 
   $('resultWrap').style.display = 'block';
   $('resultContent').className = 'result-content blurred';
