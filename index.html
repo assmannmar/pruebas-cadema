@@ -270,8 +270,8 @@
 
     <div class="bloque">
       <h2>2. Dirección del lote</h2>
-      <label for="input-direccion">Dirección</label>
-      <input type="text" id="input-direccion" placeholder="Ej: Av. Varela 420, Campana" />
+      <label for="input-direccion">Dirección, coordenadas o link de Google Maps</label>
+      <input type="text" id="input-direccion" placeholder="Ej: Av. Varela 420, Campana — o -34.1667, -58.9667 — o un link de google.com/maps/..." />
       <div class="fila-checkbox">
         <input type="checkbox" id="check-limitar" checked />
         <label for="check-limitar" style="margin:0; font-weight:400;">Limitar la búsqueda a Campana</label>
@@ -297,6 +297,7 @@
     <details>
       <summary>Cómo funciona / limitaciones</summary>
       <ul>
+        <li>También podés pegar un <strong>link de Google Maps</strong> (el largo, de la barra de direcciones) o <strong>coordenadas</strong> directo (ej: <code>-34.1667, -58.9667</code>, formato lat, lon) en vez de una dirección — el sistema los detecta solo y ubica el pin sin pasar por el geocoding. Los links <strong>cortos</strong> de "Compartir" (<code>maps.app.goo.gl</code>) no funcionan: no traen las coordenadas en la URL y el navegador no puede resolverlos por una restricción de seguridad — abrilos una vez y pegá la URL larga.</li>
         <li>El geocoding usa <strong>Nominatim (OpenStreetMap)</strong>, gratuito y sin API key. No es tan preciso como Google Maps en loteos nuevos o calles sin nombre oficial todavía — por eso el marcador se puede arrastrar.</li>
         <li>La capa de zonificación se procesa entera en el navegador (no se sube a ningún servidor).</li>
         <li>Si el punto no cae dentro de ningún polígono, es probable que el marcador esté justo en el borde o la dirección no haya geocodificado bien — arrastralo un poco.</li>
@@ -485,13 +486,94 @@
     if (e.key === "Enter") buscarDireccion();
   });
 
+  // Reconoce coordenadas pegadas como "-34.1667, -58.9667", separadas por
+  // coma o espacio, con o sin espacios extra. Si matchea, evitamos el
+  // geocoding: el usuario ya tiene el punto exacto.
+  const PATRON_COORDENADAS = /^\s*(-?\d{1,3}(?:\.\d+)?)\s*[,\s]\s*(-?\d{1,3}(?:\.\d+)?)\s*$/;
+
+  function intentarParsearCoordenadas(texto) {
+    const match = texto.match(PATRON_COORDENADAS);
+    if (!match) return null;
+
+    const lat = parseFloat(match[1]);
+    const lon = parseFloat(match[2]);
+
+    if (Math.abs(lat) > 90 || Math.abs(lon) > 180) return null; // no son lat/lon válidos
+
+    return { lat, lon };
+  }
+
+  // Extrae coordenadas de un link de Google Maps pegado tal cual. Prueba,
+  // en orden de precisión, los formatos que usa Google en sus URLs:
+  //   1) !3d<lat>!4d<lon>  → coordenadas de un pin/lugar puntual (el más
+  //      preciso; si hay varios en la URL, usamos el último, que suele
+  //      corresponder al marcador y no a fotos/contexto adicional)
+  //   2) ?q=<lat>,<lon>    → link armado a partir de una búsqueda por coords
+  //   3) @<lat>,<lon>,zoom → centro del mapa (menos preciso: puede no ser
+  //      exactamente el punto marcado, solo dónde estaba centrada la vista)
+  function intentarParsearLinkGoogleMaps(texto) {
+    const esLinkGoogleMaps = /google\.[a-z.]+\/maps|maps\.app\.goo\.gl|goo\.gl\/maps/i.test(texto);
+    if (!esLinkGoogleMaps) return null;
+
+    // Los links cortos de "Compartir" (maps.app.goo.gl / goo.gl/maps) no
+    // traen las coordenadas en la URL: son un redirect que solo el
+    // servidor de Google puede resolver. El navegador no puede leer a
+    // dónde redirige por una restricción de seguridad (CORS), así que acá
+    // no hay forma de resolverlo sin un backend propio.
+    if (/maps\.app\.goo\.gl|goo\.gl\/maps/i.test(texto)) {
+      return { error: "link_corto" };
+    }
+
+    const matchesPin = [...texto.matchAll(/!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)/g)];
+    if (matchesPin.length) {
+      const ultimo = matchesPin[matchesPin.length - 1];
+      return { lat: parseFloat(ultimo[1]), lon: parseFloat(ultimo[2]) };
+    }
+
+    let match = texto.match(/[?&]q=(-?\d+\.\d+),(-?\d+\.\d+)/);
+    if (match) return { lat: parseFloat(match[1]), lon: parseFloat(match[2]) };
+
+    match = texto.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/);
+    if (match) return { lat: parseFloat(match[1]), lon: parseFloat(match[2]) };
+
+    return { error: "sin_coordenadas" };
+  }
+
   async function buscarDireccion() {
     const direccion = inputDireccion.value.trim();
     listaResultados.innerHTML = "";
     estadoBusqueda.innerHTML = "";
 
     if (!direccion) {
-      setEstado(estadoBusqueda, "Ingresá una dirección para buscar.", "warn");
+      setEstado(estadoBusqueda, "Ingresá una dirección, coordenadas o un link de Google Maps.", "warn");
+      return;
+    }
+
+    const linkMaps = intentarParsearLinkGoogleMaps(direccion);
+    if (linkMaps) {
+      if (linkMaps.error === "link_corto") {
+        setEstado(
+          estadoBusqueda,
+          "Ese es un link corto de \"Compartir\" y no trae las coordenadas — abrilo una vez y pegá la URL larga de la barra de direcciones del navegador.",
+          "warn"
+        );
+        return;
+      }
+      if (linkMaps.error === "sin_coordenadas") {
+        setEstado(estadoBusqueda, "No encontré coordenadas en ese link de Google Maps. Probá copiando la URL completa de la barra de direcciones.", "warn");
+        return;
+      }
+      colocarMarker(linkMaps.lat, linkMaps.lon);
+      mapa.setView([linkMaps.lat, linkMaps.lon], 18);
+      setEstado(estadoBusqueda, `Ubicado desde el link de Google Maps (${linkMaps.lat}, ${linkMaps.lon}).`, "ok");
+      return;
+    }
+
+    const coords = intentarParsearCoordenadas(direccion);
+    if (coords) {
+      colocarMarker(coords.lat, coords.lon);
+      mapa.setView([coords.lat, coords.lon], 18);
+      setEstado(estadoBusqueda, `Ubicado directo por coordenadas (${coords.lat}, ${coords.lon}) — sin geocoding.`, "ok");
       return;
     }
 
@@ -602,6 +684,7 @@
     if (feature) {
       const valor = feature.properties?.[campoZona] ?? "(sin valor en ese campo)";
       valorZona.textContent = valor;
+      valorZona.style.color = "";
       btnCopiar.style.display = "block";
       btnCopiar.onclick = () => {
         navigator.clipboard.writeText(String(valor));
@@ -609,9 +692,55 @@
         setTimeout(() => (btnCopiar.textContent = "Copiar zona al portapapeles"), 1500);
       };
     } else {
-      valorZona.textContent = "Fuera de todos los polígonos";
+      // El punto no cayó en ningún polígono — pasa seguido cuando el
+      // geocoding clava el pin sobre la calle/vereda en vez del lote.
+      // Buscamos el polígono más cercano para orientar hacia dónde arrastrar.
+      const cercano = polígonoMasCercano(punto);
+      if (cercano) {
+        const valor = cercano.feature.properties?.[campoZona] ?? "(sin valor)";
+        valorZona.textContent = `Fuera de los polígonos — el más cercano es "${valor}" (a ${Math.round(cercano.distanciaMetros)} m)`;
+        valorZona.style.color = "var(--color-warn-ink)";
+      } else {
+        valorZona.textContent = "Fuera de todos los polígonos";
+        valorZona.style.color = "var(--color-warn-ink)";
+      }
       btnCopiar.style.display = "none";
     }
+  }
+
+  // Distancia del punto al polígono más cercano de la capa cargada,
+  // usando el contorno de cada polígono (turf.polygonToLine +
+  // turf.pointToLineDistance). Sirve para orientar al usuario cuando el
+  // geocoding lo dejó justo afuera (ej: sobre la calle).
+  function polígonoMasCercano(punto) {
+    let mejor = null;
+
+    for (const feature of capaGeoJSON.features) {
+      let contorno;
+      try {
+        contorno = turf.polygonToLine(feature);
+      } catch {
+        continue; // geometría no soportada (ej. no es polígono), se ignora
+      }
+
+      // polygonToLine puede devolver una Feature o un FeatureCollection
+      // (multipolígonos) — normalizamos a un array de líneas.
+      const lineas = contorno.type === "FeatureCollection" ? contorno.features : [contorno];
+
+      for (const linea of lineas) {
+        let distanciaKm;
+        try {
+          distanciaKm = turf.pointToLineDistance(punto, linea, { units: "kilometers" });
+        } catch {
+          continue;
+        }
+        if (!mejor || distanciaKm < mejor.distanciaKm) {
+          mejor = { feature, distanciaKm };
+        }
+      }
+    }
+
+    return mejor ? { feature: mejor.feature, distanciaMetros: mejor.distanciaKm * 1000 } : null;
   }
 
   // ---- utilidades ----
