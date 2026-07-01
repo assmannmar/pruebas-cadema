@@ -581,20 +581,7 @@ const ZONIFICACION_CAMPANA_GEOJSON = {"type":"FeatureCollection","features":[{"t
         <div class="card-head">UBICACIÓN <span class="n">solo Campana</span></div>
         <div class="card-body">
 
-          <div id="zg_wrap_capa">
-            <div class="field">
-              <label>Capa de zonificación</label>
-              <input type="file" id="zg_input_capa" accept=".kml,.geojson,.json,.zip">
-              <div class="hint">Ya viene incluida la oficial de Campana. Solo subí un archivo acá si el municipio publica una actualización (.kml, .geojson/.json o .zip).</div>
-            </div>
-            <div class="zg-estado zg-estado--info" id="zg_estado_capa">Cargando capa...</div>
-            <div id="zg_wrap_campo" style="display:none; margin-top:8px;">
-              <label style="display:block; font-size:12px; color:var(--ink-soft); margin-bottom:4px; font-weight:500;">Campo que indica la zonificación</label>
-              <select id="zg_select_campo"></select>
-            </div>
-          </div>
-
-          <div class="field" style="margin-top:14px;">
+          <div class="field" style="margin-top:0;">
             <label>Dirección, coordenadas o link de Google Maps</label>
             <input type="text" id="zg_input_direccion" placeholder="Av. Varela 420, Campana — o -34.1667, -58.9667 — o un link de google.com/maps/...">
             <div class="row2" style="margin-top:7px; align-items:center;">
@@ -946,6 +933,14 @@ const ZONIFICACION_CAMPANA_GEOJSON = {"type":"FeatureCollection","features":[{"t
         loginOverlay.classList.add('hidden');
         appRootEl.classList.add('show');
         userEmailLabelEl.textContent = user.email;
+
+        // Autocompletar el email del informe con el de la cuenta logueada
+        // (queda editable por si en algún caso hay que poner otro).
+        const rpEmailEl = document.getElementById('rp_email');
+        if(rpEmailEl && !rpEmailEl.value){
+          rpEmailEl.value = user.email;
+          if(typeof lastCalc !== 'undefined' && lastCalc) buildReportPrint(lastCalc);
+        }
       } else {
         auth.signOut();
         showLoginError('La cuenta ' + user.email + ' no pertenece a @' + ALLOWED_DOMAIN + '. Iniciá sesión con tu mail del trabajo.');
@@ -985,7 +980,77 @@ const ZONAS = {
     ["U/UE6",0.6,0.9,200,107,6],["U/UE7",0.6,0.9,300,null,null],
     ["U/UE8I",0.6,1,null,190,9],["U/UE8II",0.6,1,null,110,6.5],
     ["U/ZD2",0.6,null,200,300,12],["U/ZD3",0.6,1.2,200,300,12],
-    ["U/ZD7a",0.6,1.2,300,300,12]
+    ["U/ZD7a",0.6,1.2,300,300,12],
+    // ---- Agregadas desde el Código de Ordenamiento Urbano (fichas urbanísticas) ----
+    // Formato: [código, FOS, FOT, densidad neta hab/Ha, superficie mínima m2, ancho mínimo m]
+    // null = el código no fija ese indicador (o requiere consulta particular / Ver Observaciones).
+    // Ver junto a cada línea el Nº de Ficha Urbanística del COU para verificar el dato contra el PDF.
+    ["C-DES/CCo1",null,null,100,2000,40],   // Ficha 53 (FOS/FOT: Ver obs. en el código)
+    ["C-DES/FV2b",0.5,1.5,100,2000,40],     // Ficha 52
+    ["C-DUE",null,null,null,null,null],     // "DUE Condicionado": sin indicadores fijos, caso a caso (Depto. Ejecutivo)
+    ["C-DUE-C",null,null,null,null,null],   // idem "C-DUE C"
+    ["C-DUE/BC1",0.3,0.5,150,600,20],       // Ficha 36
+    ["C-DUE/BC2",0.3,0.5,150,600,20],       // Ficha 37
+    ["C-DUE/BC3",0.3,0.4,null,1000,20],     // Ficha 38 (solo "1 viv./parc.", sin hab/Ha)
+    ["C-DUE/CC1",0.4,0.6,null,600,20],      // Ficha 45 (solo "1 viv./parc.", sin hab/Ha)
+    ["C-DUE/CC2",0.3,0.5,null,1000,20],     // Ficha 46
+    ["C-DUE/CC3",0.3,0.5,null,3000,40],     // Ficha 47
+    ["C-DUE/REX1",0.3,0.5,30,null,null],    // Ficha 30 (ancho/sup: Ver observaciones)
+    ["C-DUE/REX2",0.3,0.5,30,null,null],    // Ficha 31
+    ["C-DUE/REX3",0.3,0.5,30,null,null],    // Ficha 32
+    ["C-DUE/REX4",0.3,0.5,30,null,null],    // Ficha 33
+    ["C-DUE/REX5",0.3,0.5,30,null,null],    // Ficha 34
+    ["C-DUE/REX6",0.6,1.2,30,null,null],    // Ficha 35
+    ["C-DUE/ZDI4",0.2,0.25,60,null,40],     // Ficha 48
+    ["C-DUE/ZDI5",0.2,0.25,60,null,40],     // Ficha 49
+    ["C/CL3a",0.3,0.5,150,2000,40],         // Ficha 16
+    ["C/CL3b",0.5,0.6,60,600,20],           // Ficha 16
+    ["C/CL4",0.2,0.25,60,2000,40],          // Ficha 17
+    ["C/FV2a",0.5,1.5,100,2000,40],         // Ficha 51
+    ["C/I1b",0.4,0.8,null,2000,40],         // Ficha 13 (densidad: "Laboral", no hab/Ha)
+    ["C/REU",0.5,0.5,null,null,null],       // Ficha 50
+    ["C/SUR",0.4,0.5,150,600,20],           // Ficha 16
+    ["C/ZAL",0.4,0.8,null,2000,40],         // Ficha 15 (densidad: "Laboral")
+    ["C/ZD5",0.3,0.5,60,2000,40],           // Ficha 20
+    ["C/ZD6",0.3,0.5,60,2000,40],           // Ficha 21
+    ["C/ZD7b",0.3,0.5,60,2000,40],          // Ficha 22
+    ["C/ZDI1a",0.2,0.25,100,4800,40],       // Ficha 23
+    ["C/ZDI1b",0.2,0.25,100,4800,40],       // Ficha 24
+    ["C/ZDI2a",0.2,0.25,100,4800,40],       // Ficha 25
+    ["C/ZDI2b",0.2,0.25,100,4800,40],       // SIN ficha propia — inferido igual a C/ZDI2a (mismo patrón que 1a=1b y 3a=3b). Confirmar.
+    ["C/ZDI3a",0.2,0.25,100,4800,40],       // Ficha 27
+    ["C/ZDI3b",0.2,0.25,100,4800,40],       // Ficha 28
+    ["R/I-PI1",0.5,1,null,3200,40],         // Ficha 11 (densidad: "Laboral")
+    ["R/I-SIP1",0.5,1,null,2000,40],        // Ficha 12 (densidad: "Laboral")
+    ["R/I1",0.5,1,null,5000,50],            // Ficha 8 (densidad: "Laboral")
+    ["R/I1a",0.5,1,null,5000,50],           // Ficha 9
+    ["R/I2",0.5,1,null,2000,40],            // Ficha 10
+    ["R/RI",null,null,null,null,null],      // Ficha 2 — sin indicadores fijos
+    ["R/Ru",null,null,30,null,null],        // Ficha 1
+    ["R/ZPPA1",null,null,null,null,null],   // Ficha 3 — zona de protección, sin indicadores de edificación
+    ["R/ZPPA2",null,null,null,null,null],   // Ficha 4
+    ["R/ZPPA3",null,null,null,null,null],   // Ficha 5
+    ["R/ZPPA4",null,null,null,null,null],   // Ficha 6
+    ["R/ZPPA5",null,null,null,null,null],   // Ficha 7
+    ["U/CL2aY2b",0.6,1,200,300,12],         // Alias: mismo valor que U/CL2a y U/CL2b (ficha combinada 116)
+    ["U/EP1Ia",null,null,null,null,null],   // Ficha 71 — Ver observaciones
+    ["U/EP1Ib",null,null,null,null,null],   // Ficha 72 — Ver observaciones
+    ["U/EP1Ic",0.5,0.8,200,750,25],         // Ficha 73
+    ["U/EP1Ie",null,null,null,null,null],   // Ficha 75 — sin modificaciones al parcelario, sin indicadores
+    ["U/EP1IIa",null,null,null,null,null],  // Ficha 76 — indicadores TIERED por sup. de parcela (350-500m2), no representable como valor único; ver COU
+    ["U/EP1IIb",null,null,null,null,null],  // Ficha 77 — Ver observaciones
+    ["U/EP1IIc",null,null,null,null,null],  // Ficha 78 — sin modificaciones al parcelario, sin indicadores
+    ["U/EP1IId",0.6,null,null,null,null],   // Ficha 79 (FOT: Ver obs.)
+    ["U/EP1IIIa",null,null,null,null,null], // Ficha 80 — Ver observaciones
+    ["U/EP1IIIb",0.3,0.3,null,null,null],   // Ficha 81
+    ["U/EP1IIIc",0.3,0.3,null,null,null],   // Ficha 82
+    ["U/EP1IIId",0.6,1.2,null,null,null],   // Ficha 83
+    ["U/EP3a",null,null,null,null,null],    // Ficha 87 — Ver observaciones
+    ["U/EP3b",null,null,null,null,null],    // Ficha 88 — Ver observaciones
+    ["U/EP3c",null,null,null,null,null],    // Ficha 89 — Ver observaciones
+    ["U/EP3d",null,null,null,null,null],    // Ficha 90 — Ver observaciones
+    ["U/EP6",null,null,500,null,null],      // Ficha 94
+    ["U/UE9",0.6,2,600,110,6.5]             // Ficha 105
   ],
   zarate: [
     ["Ca",0.6,2.5,1500,null,null],["Cm1",0.6,2,500,null,null],
@@ -1632,13 +1697,11 @@ function drawLot(sup, frente, fondo, l1, l2, lm, fosProy, fotFinal){
 (function () {
   const CENTRO_CAMPANA = [-34.1667, -58.9667];
   const BBOX_CAMPANA = { minLon: -59.15, minLat: -34.28, maxLon: -58.80, maxLat: -34.02 };
-  const LS_CAPA = "zg_capa_geojson_campana";
-  const LS_CAMPO = "zg_campo_zona_campana";
+  const CAMPO_ZONA = "Denominación"; // fijo: así viene la capa oficial embebida
 
   let zgMapa = null;
   let zgMapaInicializado = false;
   let zgCapaGeoJSON = null;
-  let zgCampoZona = null;
   let zgCapaLeaflet = null;
   let zgMarker = null;
 
@@ -1677,106 +1740,19 @@ function drawLot(sup, frente, fondo, l1, l2, lm, fosProy, fotFinal){
     }).addTo(zgMapa);
     setTimeout(() => zgMapa.invalidateSize(), 0);
 
-    zgIntentarCargarCapaGuardada();
+    zgCargarCapaInicial();
   }
 
   // ============================================================
-  // Carga de la capa (KML / GeoJSON / Shapefile .zip) + persistencia
+  // Capa de zonificación: siempre la oficial embebida en este archivo.
+  // Si el municipio la actualiza, la administradora del sistema reemplaza
+  // el bloque ZONIFICACION_CAMPANA_GEOJSON directamente en el código
+  // (no es una acción que se exponga a quien usa la calculadora).
   // ============================================================
 
-  function zgIntentarCargarCapaGuardada() {
-    const guardada = localStorage.getItem(LS_CAPA);
-    if (guardada) {
-      try {
-        const fc = JSON.parse(guardada);
-        zgCargarCapaEnMapa(fc, localStorage.getItem(LS_CAMPO));
-        zgSetEstado($('zg_estado_capa'), `Capa personalizada guardada en este navegador: ${fc.features.length} polígono(s).`, "ok");
-        return;
-      } catch {
-        localStorage.removeItem(LS_CAPA); // por si quedó algo corrupto
-      }
-    }
-
-    // Sin nada subido a mano, usamos la capa oficial que ya viene incluida
-    // en este archivo (no hace falta subir nada para que funcione).
-    if (typeof ZONIFICACION_CAMPANA_GEOJSON !== "undefined") {
-      zgCargarCapaEnMapa(ZONIFICACION_CAMPANA_GEOJSON, "Denominación");
-      zgSetEstado(
-        $('zg_estado_capa'),
-        `Capa oficial de Campana ya incluida: ${ZONIFICACION_CAMPANA_GEOJSON.features.length} polígono(s). Solo hace falta subir un archivo acá si el municipio la actualiza.`,
-        "ok"
-      );
-    }
-  }
-
-  $('zg_input_capa').addEventListener("change", async (e) => {
-    const archivo = e.target.files[0];
-    if (!archivo) return;
-
-    zgSetEstado($('zg_estado_capa'), "Procesando archivo...", "info");
-
-    try {
-      const ext = archivo.name.split(".").pop().toLowerCase();
-      let fc;
-
-      if (ext === "kml") {
-        const texto = await archivo.text();
-        const dom = new DOMParser().parseFromString(texto, "text/xml");
-        fc = toGeoJSON.kml(dom);
-      } else if (ext === "geojson" || ext === "json") {
-        fc = JSON.parse(await archivo.text());
-      } else if (ext === "zip") {
-        const buffer = await archivo.arrayBuffer();
-        const resultado = await shp(buffer);
-        fc = Array.isArray(resultado)
-          ? { type: "FeatureCollection", features: resultado.flatMap((r) => r.features) }
-          : resultado;
-      } else {
-        throw new Error("Formato no soportado. Usá .kml, .geojson/.json o .zip (shapefile).");
-      }
-
-      if (!fc || !fc.features || !fc.features.length) {
-        throw new Error("El archivo no tiene geometrías reconocibles.");
-      }
-
-      zgCargarCapaEnMapa(fc, null);
-      try {
-        localStorage.setItem(LS_CAPA, JSON.stringify(fc));
-      } catch {
-        // capa demasiado grande para localStorage — igual queda cargada en memoria
-        // para esta sesión, solo que va a pedir volver a subirla la próxima vez.
-      }
-      zgSetEstado($('zg_estado_capa'), `Capa cargada: ${fc.features.length} polígono(s) detectado(s). Guardada en este navegador.`, "ok");
-    } catch (err) {
-      console.error(err);
-      zgSetEstado($('zg_estado_capa'), `Error al procesar el archivo: ${err.message}`, "warn");
-    }
-  });
-
-  function zgCargarCapaEnMapa(fc, campoPreferido) {
-    zgCapaGeoJSON = fc;
-
-    const propiedades = fc.features[0].properties || {};
-    const claves = Object.keys(propiedades);
-    const selectCampo = $('zg_select_campo');
-
-    selectCampo.innerHTML = claves.map((c) => `<option value="${zgEscapeHtml(c)}">${zgEscapeHtml(c)}</option>`).join("");
-
-    const PATRON_CAMPO_ZONA = /zon|denomina|clasific|uso[_ ]?suelo|categor/i;
-    const preferido = (campoPreferido && claves.includes(campoPreferido) && campoPreferido) || null;
-    const adivinado = preferido || claves.find((c) => PATRON_CAMPO_ZONA.test(c)) || claves[0];
-
-    selectCampo.value = adivinado;
-    zgCampoZona = adivinado;
-    $('zg_wrap_campo').style.display = claves.length ? "block" : "none";
-
-    selectCampo.onchange = () => {
-      zgCampoZona = selectCampo.value;
-      localStorage.setItem(LS_CAMPO, zgCampoZona);
-      zgDibujarCapa();
-      zgRecalcularZonaSiHayMarker();
-    };
-
+  function zgCargarCapaInicial() {
+    if (typeof ZONIFICACION_CAMPANA_GEOJSON === "undefined") return;
+    zgCapaGeoJSON = ZONIFICACION_CAMPANA_GEOJSON;
     zgDibujarCapa();
     if (zgCapaLeaflet) zgMapa.fitBounds(zgCapaLeaflet.getBounds(), { padding: [20, 20] });
   }
@@ -1784,17 +1760,17 @@ function drawLot(sup, frente, fondo, l1, l2, lm, fosProy, fotFinal){
   function zgDibujarCapa() {
     if (zgCapaLeaflet) zgMapa.removeLayer(zgCapaLeaflet);
 
-    const valores = [...new Set(zgCapaGeoJSON.features.map((f) => String(f.properties?.[zgCampoZona] ?? "Sin dato")))];
+    const valores = [...new Set(zgCapaGeoJSON.features.map((f) => String(f.properties?.[CAMPO_ZONA] ?? "Sin dato")))];
     const colorPorValor = {};
     valores.forEach((v, i) => (colorPorValor[v] = zgColorDesdeIndice(i)));
 
     zgCapaLeaflet = L.geoJSON(zgCapaGeoJSON, {
       style: (feature) => {
-        const valor = String(feature.properties?.[zgCampoZona] ?? "Sin dato");
+        const valor = String(feature.properties?.[CAMPO_ZONA] ?? "Sin dato");
         return { color: colorPorValor[valor], weight: 1.3, fillColor: colorPorValor[valor], fillOpacity: 0.22 };
       },
       onEachFeature: (feature, layer) => {
-        layer.bindTooltip(String(feature.properties?.[zgCampoZona] ?? "Sin dato"));
+        layer.bindTooltip(String(feature.properties?.[CAMPO_ZONA] ?? "Sin dato"));
       },
     }).addTo(zgMapa);
 
@@ -1874,7 +1850,7 @@ function drawLot(sup, frente, fondo, l1, l2, lm, fosProy, fotFinal){
         zgSetEstado(estadoBusqueda, "No encontré coordenadas en ese link de Google Maps.", "warn");
         return;
       }
-      zgColocarMarker(link.lat, link.lon);
+      zgColocarMarker(link.lat, link.lon, texto);
       zgMapa.setView([link.lat, link.lon], 18);
       zgSetEstado(estadoBusqueda, `Ubicado desde el link de Google Maps (${link.lat}, ${link.lon}).`, "ok");
       return;
@@ -1882,7 +1858,7 @@ function drawLot(sup, frente, fondo, l1, l2, lm, fosProy, fotFinal){
 
     const coords = zgParsearCoordenadas(texto);
     if (coords) {
-      zgColocarMarker(coords.lat, coords.lon);
+      zgColocarMarker(coords.lat, coords.lon, texto);
       zgMapa.setView([coords.lat, coords.lon], 18);
       zgSetEstado(estadoBusqueda, `Ubicado directo por coordenadas (${coords.lat}, ${coords.lon}) — sin geocoding.`, "ok");
       return;
@@ -1931,7 +1907,7 @@ function drawLot(sup, frente, fondo, l1, l2, lm, fosProy, fotFinal){
 
   function zgUbicarResultado(resultado) {
     const lat = parseFloat(resultado.lat), lon = parseFloat(resultado.lon);
-    zgColocarMarker(lat, lon);
+    zgColocarMarker(lat, lon, resultado.display_name);
     zgMapa.setView([lat, lon], 17);
   }
 
@@ -1939,11 +1915,20 @@ function drawLot(sup, frente, fondo, l1, l2, lm, fosProy, fotFinal){
   // Marcador arrastrable + point-in-polygon (Turf.js)
   // ============================================================
 
-  function zgColocarMarker(lat, lon) {
+  function zgColocarMarker(lat, lon, etiquetaDireccion) {
     if (zgMarker) zgMapa.removeLayer(zgMarker);
     zgMarker = L.marker([lat, lon], { draggable: true }).addTo(zgMapa);
     zgMarker.on("dragend", zgRecalcularZonaSiHayMarker);
     zgRecalcularZonaSiHayMarker();
+
+    // Completa el campo "Dirección o partida" del informe con lo que se
+    // buscó acá arriba, para no tener que escribirlo dos veces. Sigue
+    // siendo editable a mano por si hace falta ajustarlo para el PDF.
+    if (etiquetaDireccion) {
+      const rpDireccionEl = $('rp_direccion');
+      rpDireccionEl.value = etiquetaDireccion;
+      if (typeof lastCalc !== "undefined" && lastCalc) buildReportPrint(lastCalc);
+    }
   }
 
   function zgRecalcularZonaSiHayMarker() {
@@ -1965,7 +1950,7 @@ function drawLot(sup, frente, fondo, l1, l2, lm, fosProy, fotFinal){
     });
 
     if (feature) {
-      const valor = feature.properties?.[zgCampoZona] ?? "(sin valor en ese campo)";
+      const valor = feature.properties?.[CAMPO_ZONA] ?? "(sin valor en ese campo)";
       valorZona.textContent = valor;
       btnUsar.style.display = "block";
       btnUsar.onclick = () => zgUsarZonaDetectada(valor);
@@ -1991,7 +1976,7 @@ function drawLot(sup, frente, fondo, l1, l2, lm, fosProy, fotFinal){
         if (!mejor || distanciaKm < mejor.distanciaKm) mejor = { feature, distanciaKm };
       }
     }
-    return mejor ? { valor: mejor.feature.properties?.[zgCampoZona] ?? "(sin valor)", distanciaMetros: mejor.distanciaKm * 1000 } : null;
+    return mejor ? { valor: mejor.feature.properties?.[CAMPO_ZONA] ?? "(sin valor)", distanciaMetros: mejor.distanciaKm * 1000 } : null;
   }
 
   // ============================================================
