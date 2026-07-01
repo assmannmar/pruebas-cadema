@@ -396,14 +396,26 @@
       .map((c) => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`)
       .join("");
 
-    // Adivinar cuál campo es el de zonificación (contiene "zon" en el nombre)
-    const adivinado = claves.find((c) => /zon/i.test(c)) || claves[0];
+    // Adivinar cuál campo es el de zonificación. Prioridad:
+    //   1) el campo que el usuario eligió manualmente la última vez (si
+    //      esta capa tiene un campo con ese mismo nombre)
+    //   2) un nombre que "suene" a zonificación/uso de suelo
+    //   3) el primer campo disponible, como último recurso
+    const PATRON_CAMPO_ZONA = /zon|denomina|clasific|uso[_ ]?suelo|categor/i;
+    const preferidoGuardado = localStorage.getItem("zonificacion_campo_preferido");
+
+    const adivinado =
+      (preferidoGuardado && claves.includes(preferidoGuardado) && preferidoGuardado) ||
+      claves.find((c) => PATRON_CAMPO_ZONA.test(c)) ||
+      claves[0];
+
     selectCampoZona.value = adivinado;
     campoZona = adivinado;
     selectorCampo.style.display = claves.length ? "block" : "none";
 
     selectCampoZona.addEventListener("change", () => {
       campoZona = selectCampoZona.value;
+      localStorage.setItem("zonificacion_campo_preferido", campoZona);
       dibujarCapa();
       recalcularZonaSiHayMarker();
     });
