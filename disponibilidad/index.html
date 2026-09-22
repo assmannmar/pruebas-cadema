@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Recorrido virtual del loteo</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700&family=Montserrat:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@photo-sphere-viewer/core@5.15.1/index.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@photo-sphere-viewer/markers-plugin@5.15.1/index.min.css">
+
+<style>
+  :root {
+    --panel: rgba(18, 26, 24, .66);
+    --panel-solid: #121a18;
+    --linea: rgba(255, 255, 255, .16);
+    --texto: #f3f5ef;
+    --texto-suave: rgba(243, 245, 239, .72);
+    --marca: #f0c94a;
+    --fuente: "Manrope", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+
+    --disponible: #4a8f3c;
+    --reservado: #b8920a;
+    --vendido: #c0392b;
+    --no-disponible: #555;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; background: #0c1210; font-family: var(--fuente); color: var(--texto); overflow: hidden; }
+  #visor { position: fixed; inset: 0; }
+
+  .vidrio {
+    background: var(--panel); border: 1px solid var(--linea);
+    backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+  }
+
+  /* --- Título + leyenda --- */
+  .titulo {
+    position: fixed; z-index: 10;
+    top: calc(14px + env(safe-area-inset-top, 0px)); left: 14px;
+    max-width: calc(100% - 90px);
+    padding: 10px 16px 11px; border-radius: 14px;
+    pointer-events: none;
+  }
+  .titulo small { display: block; font-size: 12px; font-weight: 500; color: var(--texto-suave); margin-bottom: 2px; }
+  .titulo strong { display: block; font-size: 18px; font-weight: 700; letter-spacing: -.01em; }
+  .leyenda {
+    display: flex; flex-wrap: wrap; gap: 4px 12px; margin-top: 8px; padding-top: 8px;
+    border-top: 1px solid var(--linea);
+    font-size: 12px; font-weight: 600; color: var(--texto-suave);
+  }
+  .leyenda span { display: inline-flex; align-items: center; gap: 5px; }
+  .leyenda i { width: 9px; height: 9px; border-radius: 50%; border: 1.5px solid #fff; }
+  .estado-datos { margin-top: 6px; font-size: 12px; color: var(--marca); }
+  .estado-datos:empty { display: none; }
+
+  /* --- Pantalla completa --- */
+  .btn-redondo {
+    width: 46px; height: 46px; border-radius: 50%;
+    display: grid; place-items: center; cursor: pointer; color: var(--texto);
+    transition: background .15s;
+  }
+  .btn-redondo:hover { background: rgba(18, 26, 24, .9); }
+  .btn-redondo svg { width: 20px; height: 20px; }
+  #pantalla-completa {
+    position: fixed; z-index: 10;
+    top: calc(14px + env(safe-area-inset-top, 0px)); right: 14px;
+  }
+
+  /* --- Barra inferior de vistas --- */
+  .barra {
+    position: fixed; z-index: 10; left: 0; right: 0;
+    bottom: calc(14px + env(safe-area-inset-bottom, 0px));
+    display: flex; justify-content: center; gap: 8px;
+    padding: 0 14px; pointer-events: none;
+  }
+  .barra > * { pointer-events: auto; }
+  .barra .btn-redondo { flex: none; }
+  .vistas {
+    display: flex; gap: 6px; padding: 5px; max-width: min(100%, 860px);
+    overflow-x: auto; scrollbar-width: none; border-radius: 26px;
+  }
+  .vistas::-webkit-scrollbar { display: none; }
+  .vista {
+    flex: none; display: flex; align-items: center; gap: 9px;
+    padding: 4px 16px 4px 4px; border: 0; border-radius: 22px; cursor: pointer;
+    background: transparent; color: var(--texto-suave);
+    font: 600 14px/1 var(--fuente); white-space: nowrap;
+    transition: background .15s, color .15s;
+  }
+  .vista:hover { background: rgba(255, 255, 255, .09); color: var(--texto); }
+  .vista img {
+    width: 38px; height: 38px; border-radius: 50%; object-fit: cover;
+    background: #26332f; border: 2px solid transparent;
+  }
+  .vista.activa { background: var(--marca); color: #1b1a10; }
+  .vista.activa img { border-color: #1b1a10; }
+
+  button:focus-visible { outline: 2px solid var(--marca); outline-offset: 2px; }
+
+  /* --- Saltos entre vistas: óvalo translúcido estilo Street View --- */
+  .salto { width: 108px; height: 62px; cursor: pointer; transition: transform .15s; }
+  .salto:hover { transform: scale(1.08); }
+  .salto svg { display: block; width: 100%; height: 100%; }
+
+  /* --- Número de lote siempre visible --- */
+  .lote-label {
+    width: 26px; height: 26px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; font: 600 12px 'Montserrat', Arial, sans-serif;
+    border: 2px solid #fff; box-shadow: 0 1px 3px rgba(0,0,0,.5);
+    pointer-events: none;
+  }
+
+  /* --- Cuadrito de detalle del lote (igual al del proyecto de lotes) --- */
+  .tooltip-lote .psv-tooltip-content {
+    background-color: #fff; color: #000;
+    font-family: 'Montserrat', Arial, Helvetica, sans-serif; font-weight: 400;
+    -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale;
+    border-radius: 5px; padding: 0; min-width: 190px;
+    border: 1px solid #222; box-shadow: none; overflow: hidden;
+  }
+  .tooltip-lote .psv-tooltip-arrow {
+    border-top-color: #fff !important; border-bottom-color: #fff !important;
+    border-left-color: #fff !important; border-right-color: #fff !important;
+  }
+  .detalle-lote { padding: 10px 14px 12px; }
+  .detalle-lote-titulo {
+    font-size: .85rem; font-weight: 600; letter-spacing: .2px; color: #111;
+    margin: 0 0 8px; padding-bottom: 6px; border-bottom: 1px solid #eee;
+  }
+  .detalle-lote-fila {
+    display: flex; justify-content: space-between; align-items: baseline; gap: 16px;
+    font-size: .75rem; line-height: 1.5; padding: 1px 0;
+  }
+  .detalle-lote-fila .valor { font-weight: 600; text-align: right; }
+  .estado-disponible { color: var(--disponible); }
+  .estado-reservado { color: var(--reservado); }
+  .estado-vendido { color: var(--vendido); }
+  .estado-no-disponible { color: var(--no-disponible); }
+
+  /* --- Modo editor (agregar ?editar a la URL) --- */
+  .editor {
+    position: fixed; z-index: 20; right: 14px; top: calc(70px + env(safe-area-inset-top, 0px));
+    width: min(340px, calc(100% - 28px)); max-height: calc(100% - 180px); overflow: auto;
+    padding: 14px; background: var(--panel-solid); border: 1px solid var(--linea); border-radius: 14px;
+    font-size: 13px; line-height: 1.45;
+  }
+  .editor h3 { margin: 0 0 6px; font-size: 13px; }
+  .editor section + section { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--linea); }
+  .editor p { margin: 0 0 8px; color: var(--texto-suave); }
+  .editor code {
+    display: block; padding: 9px 10px; border-radius: 8px; background: #0a0f0e;
+    font: 12px/1.4 ui-monospace, Menlo, Consolas, monospace; color: var(--marca);
+    user-select: all; word-break: break-all; max-height: 140px; overflow: auto;
+  }
+  .editor .acciones { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+  .editor button {
+    padding: 8px 12px; border: 0; border-radius: 8px; cursor: pointer;
+    background: var(--marca); color: #1b1a10; font: 700 13px var(--fuente);
+  }
+  .editor button.secundario { background: rgba(255,255,255,.12); color: var(--texto); }
+  .editor button[aria-pressed="true"] { background: #fff; }
+
+  @media (max-width: 560px) {
+    .vista span { display: none; }
+    .vista { padding: 4px; }
+    .titulo strong { font-size: 16px; }
+    .leyenda { font-size: 11px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; }
+  }
+</style>
+</head>
+<body>
+
+<div id="visor"></div>
+
+<div class="titulo vidrio">
+  <small id="nombre-proyecto">Recorrido virtual</small>
+  <strong id="nombre-vista"></strong>
+  <div class="leyenda" aria-label="Referencias">
+    <span><i style="background:var(--disponible)"></i>Disponible</span>
+    <span><i style="background:var(--reservado)"></i>Reservado</span>
+    <span><i style="background:var(--vendido)"></i>Vendido</span>
+    <span><i style="background:var(--no-disponible)"></i>No disponible</span>
+  </div>
+  <div class="estado-datos" id="estado-datos"></div>
+</div>
+
+<button class="btn-redondo vidrio" id="pantalla-completa" aria-label="Pantalla completa">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>
+</button>
+
+<div class="barra">
+  <button class="btn-redondo vidrio" id="anterior" aria-label="Vista anterior">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>
+  </button>
+  <nav class="vistas vidrio" id="menu" aria-label="Puntos de vista"></nav>
+  <button class="btn-redondo vidrio" id="siguiente" aria-label="Vista siguiente">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg>
+  </button>
+</div>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.185.1/build/three.module.js",
+    "@photo-sphere-viewer/core": "https://cdn.jsdelivr.net/npm/@photo-sphere-viewer/core@5.15.1/index.module.js",
+    "@photo-sphere-viewer/markers-plugin": "https://cdn.jsdelivr.net/npm/@photo-sphere-viewer/markers-plugin@5.15.1/index.module.js"
+  }
+}
+</script>
+
+<script type="module">
+import { Viewer } from '@photo-sphere-viewer/core';
+import { MarkersPlugin } from '@photo-sphere-viewer/markers-plugin';
+
+/* =====================================================================
+   CONFIGURACIÓN — es lo único que hace falta editar
+   ===================================================================== */
+
+const NOMBRE_PROYECTO = "Recorrido virtual del loteo";
+
+/* Planilla de disponibilidad (columnas A:E = lote, superficie, estado, contado, lista).
+   Restringí la key en Google Cloud a tu dominio (Referentes HTTP), porque queda visible. */
+const URL_PLANILLA = 'https://sheets.googleapis.com/v4/spreadsheets/1EY4qfcYKgItLwEhLlCJTGxG-o5SdWoE_edjhvq11R1c/values/Lotes!A:E?key=AIzaSyCtphtCkdB2jxj6rmBUM4zTwuXB2TXPGHg';
+
+/* Zoom al abrir cada vista: 0 = lo más abierto, 100 = lo más cerrado */
+const ZOOM_INICIAL = 30;
+
+/*  Cada vista:
+      id         nombre interno, sin espacios ni tildes
+      titulo     lo que ve la persona
+      imagen     foto 360 (equirectangular 2:1)
+      miniatura  foto chica para el menú
+      yaw/pitch  hacia dónde mira al abrir, en grados (yaw -180 a 180, 0 = centro de la foto)
+      puntos     saltos hacia otras vistas: { a: "id-destino", yaw, pitch, texto }
+      anchoRef   ancho en píxeles de la foto sobre la que marcaste los lotes
+                 (así los polígonos calzan aunque después uses la foto grande o la "-lite")
+      lotes      { "número de lote": [[x, y], [x, y], ...] } en píxeles de esa foto de referencia
+
+    Un mismo lote puede aparecer en varias vistas: se dibuja en cada una con su propia forma
+    y toma el estado de la misma fila de la planilla.
+
+    Para sacar coordenadas: abrí index.html?editar
+      - doble clic → línea lista para un punto de salto
+      - "Dibujar lote" → clic en cada esquina del lote → línea lista para pegar en "lotes"
+*/
+const VISTAS = [
+  { id: "p1", titulo: "Entrada", imagen: "./fotos/p1.jpg", miniatura: "./fotos/p1-min.jpg",
+    yaw: -70, pitch: -5,
+    puntos: [ { a: "p2", yaw: -105, pitch: -8, texto: "Punto 2" } ],
+    /* Ejemplo: los 8 lotes de la prueba (marcados sobre una foto de 1920 px).
+       Movelos a la vista que corresponda y ajustá anchoRef. */
+    anchoRef: 1920,
+    lotes: {
+      "1": [[277.3,385.5],[274.7,388.4],[272,391.4],[269.4,394.4],[266.7,397.3],[264.5,400.6],[262.8,404.2],[261,407.8],[258.9,411.1],[256.5,414.3],[254.1,417.5],[251.4,420.4],[248.4,423],[245.3,425.6],[242.3,428.1],[238.4,429],[234.5,429.8],[230.6,430.4],[226.8,429.3],[222.9,428.3],[219.1,427.9],[215.1,428.4],[211.2,429],[207.2,429.5],[208.1,425.9],[209.2,422.1],[210.4,418.3],[211.5,414.5],[212.7,410.6],[213.8,406.8],[214.9,403],[216.1,399.2],[217.2,395.4],[218.4,391.5],[219.5,387.7],[220.6,383.9],[221.8,380.1],[222.9,376.3],[224,372.4],[225.2,368.6],[226.3,364.8],[227.5,361],[228.6,357.2],[229.7,353.3],[230.9,349.5],[232,345.7],[233.1,341.9],[234.6,338.4],[238.5,338.7],[242.5,339],[246.5,339.3],[250.5,339.6],[254.4,339.9],[258.4,340.2],[262.4,340.5],[266.4,340.8],[270.3,341.1],[274.3,341.4],[278.3,341.7],[282.3,342],[286,342.5],[285.2,346.4],[284.4,350.3],[283.7,354.2],[282.9,358.1],[282.1,362],[281.3,365.9],[280.5,369.8],[279.7,373.7],[278.9,377.6],[278.1,381.5]],
+      "2": [[337.2,402.2],[333.3,401.3],[329.4,400.5],[325.4,399.7],[321.7,398.3],[318.1,396.6],[314.5,394.8],[311.1,392.7],[307.7,390.5],[304,388.9],[300.3,387.5],[296.5,386.2],[292.5,386.1],[288.4,386],[284.5,386.3],[280.4,386.3],[277.2,385.5],[278,381.6],[278.8,377.7],[279.6,373.7],[280.3,369.8],[281.1,365.8],[281.9,361.9],[282.7,358],[283.5,354],[284.2,350.1],[285,346.1],[285.8,342.2],[289.7,342.4],[293.7,342.7],[297.7,343],[301.7,343.4],[305.7,343.7],[309.7,344],[313.7,344.4],[317.7,344.7],[321.7,345],[325.7,345.4],[329.7,345.7],[333.7,346.1],[337.7,346.4],[338.1,350],[338,354],[338,358],[337.9,362],[337.8,366],[337.8,370.1],[337.7,374.1],[337.6,378.1],[337.6,382.1],[337.5,386.1],[337.4,390.1],[337.3,394.1],[337.3,398.2]],
+      "3": [[409.5,408.5],[409.1,404.5],[408.8,400.5],[408.4,396.5],[408.1,392.5],[407.8,388.5],[407.4,384.5],[407.1,380.5],[406.8,376.5],[406.4,372.5],[406.1,368.5],[405.7,364.5],[405.4,360.5],[405.1,356.5],[404.7,352.5],[404.4,348.5],[403.4,345.2],[399.4,345.3],[395.4,345.3],[391.4,345.4],[387.4,345.5],[383.4,345.5],[379.4,345.6],[375.4,345.6],[371.3,345.7],[367.3,345.7],[363.3,345.8],[359.3,345.9],[355.3,345.9],[351.3,346],[347.3,346],[343.3,346.1],[339.3,346.2],[337.4,348.4],[337.4,352.4],[337.4,356.4],[337.4,360.4],[337.4,364.4],[337.4,368.4],[337.3,372.4],[337.3,376.5],[337.3,380.5],[337.3,384.5],[337.3,388.5],[337.3,392.5],[337.2,396.5],[337.2,400.5],[339.2,403],[343.1,404.2],[346.9,405.3],[350.9,405.9],[354.9,406.4],[358.8,407.1],[362.7,408.1],[366.6,408.8],[370.5,408],[374.2,409],[377.9,410.2],[381.5,408.5],[385.4,408.5],[389.4,408.9],[393.4,409.2],[397.4,408.8],[401.4,408.5],[405.4,408.5]],
+      "4": [[489.9,400.7],[489.1,396.8],[488.2,392.9],[487.3,389],[486.4,385.1],[485.6,381.2],[484.7,377.3],[483.8,373.3],[482.9,369.4],[482.1,365.5],[481.2,361.6],[480.3,357.7],[479.4,353.8],[478.6,349.9],[477.7,345.9],[476.8,342],[473.6,341.3],[469.6,341.5],[465.6,341.7],[461.6,341.9],[457.6,342.1],[453.5,342.3],[449.5,342.5],[445.5,342.7],[441.5,343],[437.5,343.2],[433.5,343.4],[429.5,343.6],[425.5,343.8],[421.5,344],[417.5,344.2],[413.5,344.4],[409.5,344.6],[405.5,344.9],[403.6,346.9],[404,350.9],[404.4,354.8],[404.8,358.8],[405.2,362.8],[405.6,366.8],[406,370.8],[406.4,374.8],[406.8,378.8],[407.2,382.8],[407.6,386.8],[408,390.8],[408.4,394.7],[408.8,398.7],[409.1,402.7],[409.5,406.7],[412.2,408.3],[416.2,408.5],[420.2,408.6],[424.2,408.7],[428.2,408.9],[432.2,409],[436.2,409.1],[440.2,408.9],[444.1,408],[448,407.1],[451.7,405.6],[455.4,404],[459.3,403.5],[463.3,403.8],[467.3,404.1],[471.2,404.7],[475.2,405.4],[479.1,406],[482.7,404.3],[486.3,402.5]],
+      "5": [[561.2,389.1],[560,385.3],[558.9,381.5],[557.7,377.7],[556.5,373.9],[555.4,370.1],[554.2,366.3],[553,362.5],[551.9,358.7],[550.7,354.9],[549.5,351.1],[548.4,347.3],[547.2,343.5],[546,339.7],[544.9,335.9],[543.7,332.1],[540.3,331.9],[536.3,332.4],[532.4,333],[528.4,333.5],[524.5,334.1],[520.6,334.6],[516.6,335.2],[512.7,335.7],[508.8,336.3],[504.8,336.8],[500.9,337.4],[496.9,338],[493,338.5],[489.1,339.1],[485.1,339.6],[481.2,340.2],[477.3,340.7],[477,343.9],[477.9,347.7],[478.8,351.6],[479.7,355.5],[480.6,359.4],[481.4,363.2],[482.3,367.1],[483.2,371],[484.1,374.9],[485,378.8],[485.8,382.6],[486.7,386.5],[487.6,390.4],[488.5,394.3],[489.4,398.2],[491.3,400.6],[495.2,400.4],[499.2,400.2],[503.1,399.7],[506.8,398.3],[510.6,396.8],[514.4,395.8],[518.2,394.7],[522,393.4],[525.8,392.2],[529.7,392.1],[533.7,392.2],[537.6,392],[541.6,391.7],[545.6,391.4],[549.6,391.2],[553.5,391.1],[557.4,390.2]],
+      "6": [[629.6,381.1],[628.5,377.2],[627.4,373.4],[626.3,369.6],[625.2,365.7],[624.1,361.9],[623,358],[621.9,354.2],[620.8,350.3],[619.7,346.5],[618.6,342.6],[617.5,338.8],[616.5,335],[615.4,331.1],[614.3,327.3],[613.2,323.4],[612.1,319.6],[609.3,318.5],[605.3,319.2],[601.4,320],[597.5,320.7],[593.6,321.4],[589.6,322.2],[585.7,322.9],[581.8,323.7],[577.8,324.4],[573.9,325.1],[570,325.9],[566.1,326.6],[562.1,327.3],[558.2,328.1],[554.3,328.8],[550.3,329.5],[546.4,330.3],[543.2,331.4],[544.4,335.2],[545.7,339.1],[546.9,342.9],[548.1,346.7],[549.3,350.5],[550.6,354.3],[551.8,358.1],[553,361.9],[554.2,365.7],[555.5,369.5],[556.7,373.3],[557.9,377.1],[559.1,380.9],[560.4,384.7],[561.6,388.5],[565.3,389.3],[569.3,389.7],[573.3,390.2],[577.2,390.7],[581,390.4],[583.8,387.6],[586.6,384.8],[590.3,383.2],[594,381.8],[597.9,381.2],[601.8,381.5],[605.8,381.8],[609.8,381.2],[613.7,380.5],[617.6,379.9],[621.6,380.3],[625.6,380.7]],
+      "7": [[695.8,392],[691.8,391.1],[687.9,390.2],[684,389.3],[680.1,388.4],[676.2,387.7],[672.2,386.9],[668.3,386.1],[664.3,385.3],[660.4,384.7],[656.4,384.3],[652.4,384],[648.4,383.7],[644.4,383.5],[640.4,383.2],[636.4,382.9],[632.5,382],[629.5,380.1],[628.3,376.2],[627.2,372.4],[626.1,368.5],[625,364.7],[623.9,360.8],[622.7,357],[621.6,353.1],[620.5,349.3],[619.4,345.4],[618.2,341.6],[617.1,337.7],[616,333.9],[614.9,330],[613.8,326.1],[612.6,322.3],[611.5,318.4],[615,317.9],[619,317.8],[623,317.7],[627.1,317.6],[631.1,317.5],[635.1,317.3],[639.1,317.2],[643.1,317.1],[647.1,317],[651.1,316.8],[655.1,316.7],[659.2,316.6],[663.2,316.5],[667.2,316.4],[671.2,316.2],[675.2,316.1],[679.2,316],[683.2,315.9],[687.2,315.7],[691.3,315.6],[695.3,315.5],[699.1,315.8],[701.9,318.7],[704.9,321.3],[708.3,323.6],[711.9,325.2],[715.3,326.6],[714.2,330.5],[713,334.3],[711.9,338.2],[710.7,342],[709.6,345.8],[708.4,349.7],[707.3,353.5],[706.1,357.4],[705,361.2],[703.8,365.1],[702.7,368.9],[701.5,372.8],[700.4,376.6],[699.2,380.5],[698.1,384.3],[696.9,388.2]],
+      "8": [[791.5,391.8],[787.6,392.4],[783.6,393],[779.6,393.7],[775.7,394.3],[771.7,394.9],[767.7,395.1],[763.7,395],[759.7,394.9],[755.6,394.8],[751.6,394.7],[747.6,394.7],[743.6,394.7],[739.6,394.7],[735.6,394.6],[731.6,394.3],[727.6,394.5],[723.6,395.1],[719.6,395.2],[715.6,394.8],[711.6,394.4],[707.6,394],[703.7,393.3],[699.7,392.5],[696.1,391.6],[697.2,387.7],[698.3,383.8],[699.4,380],[700.5,376.1],[701.6,372.2],[702.7,368.4],[703.8,364.5],[704.9,360.7],[706,356.8],[707.1,352.9],[708.2,349.1],[709.3,345.2],[710.4,341.3],[711.5,337.5],[712.6,333.6],[713.7,329.8],[715.1,326.3],[719.1,326.3],[723.1,326.3],[727.1,326.3],[731.2,326.2],[735.2,326.2],[739.2,326.2],[743.2,326.2],[747.2,326.2],[751.2,326.2],[755.3,326.2],[759.3,326.2],[763.3,326.1],[767.3,326.1],[771.3,326.1],[775.3,326.1],[779.4,326.1],[783.4,326.1],[785.9,327.7],[786.2,331.7],[786.6,335.7],[786.9,339.7],[787.3,343.7],[787.6,347.8],[788,351.8],[788.3,355.8],[788.7,359.8],[789,363.8],[789.4,367.8],[789.7,371.8],[790.1,375.8],[790.5,379.8],[790.8,383.8],[791.2,387.8]]
+    } },
+
+  { id: "p2", titulo: "Punto 2", imagen: "./fotos/p2.jpg", miniatura: "./fotos/p2-min.jpg",
+    yaw: -107, pitch: -5,
+    puntos: [ { a: "p1", yaw: 69,   pitch: -8, texto: "Entrada" },
+              { a: "p3", yaw: -107, pitch: -8, texto: "Punto 3" } ] },
+
+  { id: "p3", titulo: "Punto 3", imagen: "./fotos/p3.jpg", miniatura: "./fotos/p3-min.jpg",
+    yaw: -107, pitch: -5,
+    puntos: [ { a: "p2", yaw: 69,   pitch: -8, texto: "Punto 2" },
+              { a: "p4", yaw: -107, pitch: -8, texto: "Punto 4" } ] },
+
+  { id: "p4", titulo: "Punto 4", imagen: "./fotos/p4.jpg", miniatura: "./fotos/p4-min.jpg",
+    yaw: -130, pitch: -5,
+    puntos: [ { a: "p3", yaw: 52,   pitch: -8, texto: "Punto 3" },
+              { a: "p5", yaw: -130, pitch: -8, texto: "Punto 5" } ] },
+
+  { id: "p5", titulo: "Punto 5", imagen: "./fotos/p5.jpg", miniatura: "./fotos/p5-min.jpg",
+    yaw: -114, pitch: -5,
+    puntos: [ { a: "p4", yaw: 66,   pitch: -8, texto: "Punto 4" },
+              { a: "p6", yaw: -114, pitch: -8, texto: "Punto 6" } ] },
+
+  { id: "p6", titulo: "Punto 6", imagen: "./fotos/p6.jpg", miniatura: "./fotos/p6-min.jpg",
+    yaw: -131, pitch: -5,
+    puntos: [ { a: "p5", yaw: 58,   pitch: -8, texto: "Punto 5" },
+              { a: "p7", yaw: -131, pitch: -8, texto: "Punto 7" } ] },
+
+  { id: "p7", titulo: "Punto 7", imagen: "./fotos/p7.jpg", miniatura: "./fotos/p7-min.jpg",
+    yaw: -134, pitch: -5,
+    puntos: [ { a: "p6", yaw: 65,   pitch: -8, texto: "Punto 6" },
+              { a: "p8", yaw: -134, pitch: -8, texto: "Punto 8" } ] },
+
+  { id: "p8", titulo: "Punto 8", imagen: "./fotos/p8.jpg", miniatura: "./fotos/p8-min.jpg",
+    yaw: 110, pitch: -5,
+    puntos: [ { a: "p7", yaw: 9, pitch: -8, texto: "Punto 7" } ] }
+];
+
+/* =====================================================================
+   A partir de acá no hace falta tocar nada
+   ===================================================================== */
+
+const ANCHO_REF_POR_DEFECTO = 1920;
+const rad = g => g * Math.PI / 180;
+const grados = r => { let g = r * 180 / Math.PI; if (g > 180) g -= 360; return g; };
+
+/* Píxel de la foto de referencia → ángulos (yaw, pitch) en radianes, y al revés */
+function pixelAAngulo([x, y], ancho) {
+  const alto = ancho / 2;
+  return [(x / ancho) * 2 * Math.PI - Math.PI, Math.PI / 2 - (y / alto) * Math.PI];
+}
+function anguloAPixel(yaw, pitch, ancho) {
+  let x = ((yaw + Math.PI) / (2 * Math.PI)) * ancho;
+  x = ((x % ancho) + ancho) % ancho;
+  const y = ((Math.PI / 2 - pitch) / Math.PI) * (ancho / 2);
+  return [Math.round(x * 10) / 10, Math.round(y * 10) / 10];
+}
+function centroide(puntos) {
+  const s = puntos.reduce((a, p) => [a[0] + p[0], a[1] + p[1]], [0, 0]);
+  return [s[0] / puntos.length, s[1] / puntos.length];
+}
+
+/* Si el dispositivo no aguanta fotos de 6080 px de ancho, usa la versión "-lite" (4096 px) */
+const TEXTURA_MAX = (() => {
+  try {
+    const c = document.createElement("canvas");
+    const gl = c.getContext("webgl") || c.getContext("experimental-webgl");
+    return gl ? gl.getParameter(gl.MAX_TEXTURE_SIZE) : 0;
+  } catch (e) { return 0; }
+})();
+const USAR_LITE = TEXTURA_MAX > 0 && TEXTURA_MAX < 6080;
+const rutaFoto = ruta => USAR_LITE ? ruta.replace(/\.jpg$/, "-lite.jpg") : ruta;
+
+/* ---------- Estados y estilos de lotes ---------- */
+const COLOR_BADGE = { 'Disponible': '#4a8f3c', 'Reservado': '#b8920a', 'Vendido': '#c0392b' };
+const colorBadge = estado => COLOR_BADGE[estado] || '#555';
+
+function estiloPorEstado(estado) {
+  switch (estado) {
+    case 'Disponible': return { fill: 'rgba(95,156,87,0.35)', stroke: 'rgba(95,156,87,0.9)' };
+    case 'Reservado':  return { fill: 'rgba(255,255,0,0.5)',  stroke: 'rgba(200,200,0,0.9)' };
+    case 'Vendido':    return { fill: 'rgba(255,0,0,0.5)',    stroke: 'rgba(200,0,0,0.9)' };
+    case 'No Disponible':
+    case 'Desarrollador': return { fill: 'rgba(0,0,0,0.5)', stroke: 'rgba(0,0,0,0.9)' };
+    default: return { fill: 'rgba(150,150,150,0.4)', stroke: 'rgba(150,150,150,0.9)' };
+  }
+}
+const textoEstado = e => e === 'Desarrollador' ? 'No Disponible' : e;
+function claseEstado(e) {
+  return { 'Disponible': 'estado-disponible', 'Reservado': 'estado-reservado', 'Vendido': 'estado-vendido' }[e]
+    || 'estado-no-disponible';
+}
+
+function tooltipHTML(id, fila) {
+  if (!fila) {
+    return `<div class="detalle-lote"><div class="detalle-lote-titulo">Lote ${id}</div>
+      <div class="detalle-lote-fila"><span>Estado</span><span class="valor">Sin datos</span></div></div>`;
+  }
+  const [, superficie, estado, , valorLista] = fila;
+  let filas = `
+    <div class="detalle-lote-fila"><span>Superficie</span><span class="valor">${superficie} m2</span></div>
+    <div class="detalle-lote-fila"><span>Estado</span><span class="valor ${claseEstado(estado)}">${textoEstado(estado)}</span></div>`;
+  if (estado === 'Disponible') {
+    filas += `<div class="detalle-lote-fila"><span>Precio Lista</span><span class="valor">${valorLista}</span></div>`;
+  }
+  return `<div class="detalle-lote"><div class="detalle-lote-titulo">Lote ${id}</div>${filas}</div>`;
+}
+
+/* ---------- Ícono de salto (óvalo con chevron) ---------- */
+const ICONO_SALTO =
+  '<svg viewBox="0 0 190 100" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">' +
+    '<defs><radialGradient id="ovaloPunto" cx="50%" cy="50%" r="50%">' +
+      '<stop offset="55%" stop-color="#e8e8e8" stop-opacity=".55"/>' +
+      '<stop offset="100%" stop-color="#e8e8e8" stop-opacity="0"/>' +
+    '</radialGradient></defs>' +
+    '<ellipse cx="95" cy="50" rx="92" ry="48" fill="url(#ovaloPunto)"/>' +
+    '<path d="M55 66 L95 34 L135 66" fill="none" stroke="#6b6b6b" stroke-opacity=".8" ' +
+      'stroke-width="20" stroke-linecap="round" stroke-linejoin="round"/>' +
+  '</svg>';
+const escaparTexto = t => String(t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+/* ---------- Disponibilidad (planilla) ---------- */
+let estadoDatos = 'cargando';          // 'cargando' | 'ok' | 'error'
+const DISPONIBILIDAD = {};             // "id" → fila [id, superficie, estado, contado, lista]
+const avisoDatos = document.getElementById('estado-datos');
+
+/* ---------- Marcadores de cada vista ---------- */
+function marcadoresDe(v) {
+  const lista = [];
+
+  (v.puntos || []).forEach((p, i) => {
+    lista.push({
+      id: 'salto-' + i,
+      position: { yaw: rad(p.yaw), pitch: rad(p.pitch) },
+      html: `<div class="salto" role="button" aria-label="Ir a ${escaparTexto(p.texto)}">${ICONO_SALTO}</div>`,
+      anchor: 'center center',
+      zIndex: 20,
+      data: { tipo: 'salto', a: p.a },
+    });
+  });
+
+  if (estadoDatos === 'cargando') return lista;
+
+  const ancho = v.anchoRef || ANCHO_REF_POR_DEFECTO;
+  Object.entries(v.lotes || {}).forEach(([id, puntos]) => {
+    const fila = DISPONIBILIDAD[id];
+    if (estadoDatos === 'ok' && !fila) return;   // lote que no está en la planilla: no se dibuja
+    const estado = fila ? fila[2] : null;
+    const estilo = estiloPorEstado(estado);
+
+    lista.push({
+      id: 'lote-' + id,
+      polygon: puntos.map(p => pixelAAngulo(p, ancho)),
+      svgStyle: { fill: estilo.fill, stroke: estilo.stroke, strokeWidth: '2px' },
+      tooltip: { content: tooltipHTML(id, fila), className: 'tooltip-lote', trigger: 'hover' },
+      data: { tipo: 'lote', id },
+    });
+
+    const [yaw, pitch] = pixelAAngulo(centroide(puntos), ancho);
+    lista.push({
+      id: 'label-' + id,
+      position: { yaw, pitch },
+      html: `<div class="lote-label" style="background-color:${colorBadge(estado)}">${escaparTexto(id)}</div>`,
+      anchor: 'center center',
+      zIndex: 5,
+    });
+  });
+
+  return lista;
+}
+
+/* Al llegar a una vista, mira hacia el otro punto de salto (el que sigue el camino) */
+function posicionDeLlegada(destino, origen) {
+  const d = VISTAS.find(v => v.id === destino);
+  const otro = origen ? (d.puntos || []).find(p => p.a !== origen) : null;
+  return otro ? { yaw: rad(otro.yaw), pitch: rad(-5) } : { yaw: rad(d.yaw), pitch: rad(d.pitch) };
+}
+
+/* ---------- Visor ---------- */
+document.getElementById("nombre-proyecto").textContent = NOMBRE_PROYECTO;
+document.title = NOMBRE_PROYECTO;
+
+const primera = VISTAS[0];
+let vistaActual = primera.id;
+let navegando = false;
+
+const visor = new Viewer({
+  container: document.getElementById('visor'),
+  panorama: rutaFoto(primera.imagen),
+  defaultYaw: rad(primera.yaw),
+  defaultPitch: rad(primera.pitch),
+  defaultZoomLvl: ZOOM_INICIAL,
+  navbar: false,
+  loadingTxt: 'Cargando…',
+  plugins: [[MarkersPlugin, { markers: [], clickEventOnMarker: true }]],
+});
+const marcadores = visor.getPlugin(MarkersPlugin);
+
+visor.addEventListener('ready', () => marcadores.setMarkers(marcadoresDe(primera)), { once: true });
+
+marcadores.addEventListener('select-marker', ({ marker }) => {
+  if (marker.data?.tipo === 'salto') irA(marker.data.a, vistaActual, marker.config.position);
+});
+
+async function irA(id, origen = null, haciaSalto = null) {
+  if (navegando || id === vistaActual) return;
+  const v = VISTAS.find(x => x.id === id);
+  if (!v) return;
+  navegando = true;
+
+  try {
+    // Si vino de un salto: gira y se acerca un poco hacia él, como "caminando"
+    if (haciaSalto && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      await visor.animate({ yaw: haciaSalto.yaw, pitch: 0, zoom: Math.min(100, visor.getZoomLevel() + 20), speed: 450 });
+    }
+    marcadores.clearMarkers();
+    vistaActual = id;
+    marcarActiva();
+    await visor.setPanorama(rutaFoto(v.imagen), {
+      position: posicionDeLlegada(id, origen),
+      zoom: ZOOM_INICIAL,
+      transition: { speed: 900, rotation: false, effect: 'fade' },
+    });
+    marcadores.setMarkers(marcadoresDe(v));
+  } catch (e) {
+    console.error('No se pudo abrir la vista', id, e);
+  } finally {
+    navegando = false;
+  }
+}
+
+/* ---------- Menú de vistas ---------- */
+const menu = document.getElementById("menu");
+VISTAS.forEach(v => {
+  const b = document.createElement("button");
+  b.className = "vista";
+  b.dataset.id = v.id;
+  b.innerHTML = '<img alt="" loading="lazy"><span></span>';
+  b.querySelector("img").src = v.miniatura || v.imagen;
+  b.querySelector("span").textContent = v.titulo;
+  b.setAttribute("aria-label", v.titulo);
+  b.addEventListener("click", () => irA(v.id));
+  menu.appendChild(b);
+});
+
+function marcarActiva() {
+  const v = VISTAS.find(x => x.id === vistaActual);
+  document.getElementById("nombre-vista").textContent = v ? v.titulo : "";
+  menu.querySelectorAll(".vista").forEach(b => {
+    const activa = b.dataset.id === vistaActual;
+    b.classList.toggle("activa", activa);
+    b.setAttribute("aria-current", activa ? "true" : "false");
+    if (activa) b.scrollIntoView({ block: "nearest", inline: "center", behavior: "smooth" });
+  });
+}
+marcarActiva();
+
+const indiceActual = () => VISTAS.findIndex(v => v.id === vistaActual);
+document.getElementById("anterior").addEventListener("click", () =>
+  irA(VISTAS[(indiceActual() - 1 + VISTAS.length) % VISTAS.length].id));
+document.getElementById("siguiente").addEventListener("click", () =>
+  irA(VISTAS[(indiceActual() + 1) % VISTAS.length].id));
+document.getElementById("pantalla-completa").addEventListener("click", () => visor.toggleFullscreen());
+
+/* Shift + flechas izquierda/derecha cambian de vista */
+document.addEventListener("keydown", e => {
+  if (!e.shiftKey) return;
+  if (e.key === "ArrowRight") document.getElementById("siguiente").click();
+  if (e.key === "ArrowLeft") document.getElementById("anterior").click();
+});
+
+/* ---------- Carga de la planilla ---------- */
+avisoDatos.textContent = 'Cargando disponibilidad…';
+fetch(URL_PLANILLA)
+  .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+  .then(data => {
+    (data.values || []).forEach(fila => {
+      if (fila[0] != null) DISPONIBILIDAD[String(fila[0]).trim()] = fila;
+    });
+    estadoDatos = 'ok';
+    avisoDatos.textContent = '';
+  })
+  .catch(err => {
+    console.error('Error cargando datos de Sheets:', err);
+    estadoDatos = 'error';
+    avisoDatos.textContent = 'No se pudo cargar la disponibilidad. Los lotes se muestran sin estado.';
+  })
+  .finally(() => {
+    if (!navegando && visor.state.ready) {
+      marcadores.setMarkers(marcadoresDe(VISTAS.find(v => v.id === vistaActual)));
+    }
+  });
+
+/* =====================================================================
+   Modo editor: index.html?editar
+   ===================================================================== */
+if (new URLSearchParams(location.search).has("editar")) {
+  const panel = document.createElement("div");
+  panel.className = "editor";
+  panel.innerHTML = `
+    <section>
+      <h3>Punto de salto</h3>
+      <p>Doble clic en la foto donde quieras el salto. Pegalo en <i>puntos</i> de esta vista y cambiá el destino y el texto.</p>
+      <code id="ed-salto">Todavía no hiciste doble clic</code>
+      <div class="acciones"><button type="button" data-copiar="ed-salto">Copiar</button></div>
+    </section>
+    <section>
+      <h3>Lote</h3>
+      <p>Activá el dibujo y hacé clic en cada esquina del lote, en orden. Pegalo en <i>lotes</i> de esta vista.
+         Las coordenadas usan el <i>anchoRef</i> de la vista (o ${ANCHO_REF_POR_DEFECTO} si no tiene).</p>
+      <div class="acciones">
+        <button type="button" id="ed-dibujar" aria-pressed="false">Dibujar lote</button>
+        <button type="button" class="secundario" id="ed-deshacer">Deshacer</button>
+        <button type="button" class="secundario" id="ed-limpiar">Empezar otro</button>
+      </div>
+      <code id="ed-lote" style="margin-top:8px">Sin puntos</code>
+      <div class="acciones"><button type="button" data-copiar="ed-lote">Copiar</button></div>
+    </section>`;
+  document.body.appendChild(panel);
+
+  let dibujando = false;
+  let puntosLote = [];   // en radianes [yaw, pitch]
+  const anchoVista = () => VISTAS.find(v => v.id === vistaActual).anchoRef || ANCHO_REF_POR_DEFECTO;
+
+  function actualizarLote() {
+    try { marcadores.removeMarker('editor-lote'); } catch (e) {}
+    if (puntosLote.length >= 2) {
+      const forma = puntosLote.length >= 3 ? 'polygon' : 'polyline';
+      marcadores.addMarker({
+        id: 'editor-lote', [forma]: puntosLote,
+        svgStyle: { fill: 'rgba(240,201,74,.3)', stroke: '#f0c94a', strokeWidth: '2px', strokeDasharray: '6 4' },
+      });
+    }
+    const ancho = anchoVista();
+    const px = puntosLote.map(([y, p]) => anguloAPixel(y, p, ancho));
+    document.getElementById('ed-lote').textContent = px.length
+      ? `"ID": ${JSON.stringify(px)},`
+      : 'Sin puntos';
+  }
+
+  visor.addEventListener('dblclick', ({ data }) => {
+    if (dibujando) return;
+    document.getElementById("ed-salto").textContent =
+      `{ a: "id-destino", yaw: ${grados(data.yaw).toFixed(0)}, pitch: ${grados(data.pitch).toFixed(0)}, texto: "Nombre" },`;
+  });
+  visor.addEventListener('click', ({ data }) => {
+    if (!dibujando || data.rightclick) return;
+    puntosLote.push([data.yaw, data.pitch]);
+    actualizarLote();
+  });
+
+  const btnDibujar = document.getElementById('ed-dibujar');
+  btnDibujar.addEventListener('click', () => {
+    dibujando = !dibujando;
+    btnDibujar.setAttribute('aria-pressed', String(dibujando));
+    btnDibujar.textContent = dibujando ? 'Dibujando… (clic para pausar)' : 'Dibujar lote';
+  });
+  document.getElementById('ed-deshacer').addEventListener('click', () => { puntosLote.pop(); actualizarLote(); });
+  document.getElementById('ed-limpiar').addEventListener('click', () => { puntosLote = []; actualizarLote(); });
+  panel.querySelectorAll('[data-copiar]').forEach(b => b.addEventListener('click', () => {
+    const t = document.getElementById(b.dataset.copiar).textContent;
+    if (navigator.clipboard) navigator.clipboard.writeText(t);
+  }));
+
+  // Al cambiar de vista se descarta el dibujo en curso
+  visor.addEventListener('panorama-load', () => { puntosLote = []; actualizarLote(); });
+}
+</script>
+</body>
+</html>
