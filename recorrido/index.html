@@ -78,18 +78,13 @@
   .vista.activa { background: var(--marca); color: #1b1a10; }
   .vista.activa img { border-color: #1b1a10; }
 
-  /* --- Hotspots: flecha translúcida, estilo Google Street View --- */
+  /* --- Hotspots: óvalo translúcido con flecha, estilo Google Street View --- */
   .pnlm-hotspot-base.punto {
-    width: 62px; height: 62px;
+    width: 108px; height: 62px;
     cursor: pointer; transition: transform .15s;
   }
-  .pnlm-hotspot-base.punto:hover { transform: scale(1.12); }
-  .pnlm-hotspot-base.punto::after {           /* sombra ovalada en el piso, ubica la flecha */
-    content: ""; position: absolute; left: 50%; bottom: 2px; translate: -50% 0;
-    width: 26px; height: 10px; border-radius: 50%;
-    background: rgba(0, 0, 0, .3); filter: blur(2px);
-  }
-  .punto svg { position: absolute; inset: 0; margin: auto; width: 62px; height: 62px; }
+  .pnlm-hotspot-base.punto:hover { transform: scale(1.08); }
+  .punto svg { position: absolute; inset: 0; width: 108px; height: 62px; }
 
   /* --- Modo editor (agregar ?editar a la URL) --- */
   .editor {
@@ -202,10 +197,16 @@ const VISTAS = [
    A partir de acá no hace falta tocar nada
    ===================================================================== */
 
-/* Flecha translúcida en el piso, estilo Google Street View: sin círculo, con sombra para que se note */
+/* Óvalo translúcido con chevron, igual al de Google Street View */
 const ICONO_SALTO =
-  '<svg viewBox="0 0 62 62" xmlns="http://www.w3.org/2000/svg" style="filter:drop-shadow(0 2px 5px rgba(0,0,0,.6)) drop-shadow(0 0 2px rgba(0,0,0,.5))">' +
-    '<path d="M31 10 L49 33 H38 V52 H24 V33 H13 Z" fill="#fff" fill-opacity=".82" stroke="rgba(0,0,0,.35)" stroke-width="1.5" stroke-linejoin="round"/>' +
+  '<svg viewBox="0 0 190 100" xmlns="http://www.w3.org/2000/svg">' +
+    '<defs><radialGradient id="ovaloPunto" cx="50%" cy="50%" r="50%">' +
+      '<stop offset="55%" stop-color="#e8e8e8" stop-opacity=".55"/>' +
+      '<stop offset="100%" stop-color="#e8e8e8" stop-opacity="0"/>' +
+    '</radialGradient></defs>' +
+    '<ellipse cx="95" cy="50" rx="92" ry="48" fill="url(#ovaloPunto)"/>' +
+    '<path d="M55 66 L95 34 L135 66" fill="none" stroke="#6b6b6b" stroke-opacity=".8" ' +
+      'stroke-width="20" stroke-linecap="round" stroke-linejoin="round"/>' +
   '</svg>';
 
 document.getElementById("nombre-proyecto").textContent = NOMBRE_PROYECTO;
