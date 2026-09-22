@@ -78,21 +78,18 @@
   .vista.activa { background: var(--marca); color: #1b1a10; }
   .vista.activa img { border-color: #1b1a10; }
 
-  /* --- Hotspots: flecha de navegación, estilo Google Maps --- */
+  /* --- Hotspots: flecha translúcida, estilo Google Street View --- */
   .pnlm-hotspot-base.punto {
-    width: 46px; height: 46px;
+    width: 62px; height: 62px;
     cursor: pointer; transition: transform .15s;
-    filter: drop-shadow(0 2px 6px rgba(0, 0, 0, .55));
   }
-  .pnlm-hotspot-base.punto:hover { transform: scale(1.14); }
-  .pnlm-hotspot-base.punto::after {           /* anillo de pulso sutil, marca el punto en el piso */
-    content: ""; position: absolute; left: 50%; bottom: -3px; translate: -50% 0;
-    width: 20px; height: 8px; border-radius: 50%;
-    background: rgba(0, 0, 0, .35); filter: blur(1.5px);
-    animation: pulso 2.4s ease-out infinite;
+  .pnlm-hotspot-base.punto:hover { transform: scale(1.12); }
+  .pnlm-hotspot-base.punto::after {           /* sombra ovalada en el piso, ubica la flecha */
+    content: ""; position: absolute; left: 50%; bottom: 2px; translate: -50% 0;
+    width: 26px; height: 10px; border-radius: 50%;
+    background: rgba(0, 0, 0, .3); filter: blur(2px);
   }
-  @keyframes pulso { from { opacity: .5; } 50% { opacity: .15; } to { opacity: .5; } }
-  .punto svg { position: absolute; inset: 0; margin: auto; width: 46px; height: 46px; }
+  .punto svg { position: absolute; inset: 0; margin: auto; width: 62px; height: 62px; }
 
   /* --- Modo editor (agregar ?editar a la URL) --- */
   .editor {
@@ -205,11 +202,10 @@ const VISTAS = [
    A partir de acá no hace falta tocar nada
    ===================================================================== */
 
-/* Flecha chevron tipo Google Maps: círculo celeste con borde blanco y flecha hacia arriba */
+/* Flecha translúcida en el piso, estilo Google Street View: sin círculo, con sombra para que se note */
 const ICONO_SALTO =
-  '<svg viewBox="0 0 46 46" xmlns="http://www.w3.org/2000/svg">' +
-    '<circle cx="23" cy="23" r="19" fill="#4285F4" stroke="#fff" stroke-width="3"/>' +
-    '<path d="M23 14l9 12.5h-6V33h-6v-6.5h-6z" fill="#fff"/>' +
+  '<svg viewBox="0 0 62 62" xmlns="http://www.w3.org/2000/svg" style="filter:drop-shadow(0 2px 5px rgba(0,0,0,.6)) drop-shadow(0 0 2px rgba(0,0,0,.5))">' +
+    '<path d="M31 10 L49 33 H38 V52 H24 V33 H13 Z" fill="#fff" fill-opacity=".82" stroke="rgba(0,0,0,.35)" stroke-width="1.5" stroke-linejoin="round"/>' +
   '</svg>';
 
 document.getElementById("nombre-proyecto").textContent = NOMBRE_PROYECTO;
