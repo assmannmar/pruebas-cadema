@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Recorrido virtual del loteo</title>
+<title>Recorrido virtual - La Amelia</title>
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -195,7 +195,7 @@
 <div id="visor"></div>
 
 <div class="titulo vidrio">
-  <small id="nombre-proyecto">Recorrido virtual</small>
+  <small id="nombre-proyecto">Recorrido virtual - La Amelia</small>
   <strong id="nombre-vista"></strong>
   <div class="leyenda" aria-label="Referencias">
     <span><i style="background:var(--disponible)"></i>Disponible</span>
@@ -240,11 +240,11 @@ import { MarkersPlugin } from '@photo-sphere-viewer/markers-plugin';
    CONFIGURACIÓN — es lo único que hace falta editar
    ===================================================================== */
 
-const NOMBRE_PROYECTO = "Recorrido virtual del loteo";
+const NOMBRE_PROYECTO = "Recorrido virtual - La Amelia";
 
 /* Planilla de disponibilidad (columnas A:E = lote, superficie, estado, contado, lista).
    Restringí la key en Google Cloud a tu dominio (Referentes HTTP), porque queda visible. */
-const URL_PLANILLA = 'https://sheets.googleapis.com/v4/spreadsheets/1EY4qfcYKgItLwEhLlCJTGxG-o5SdWoE_edjhvq11R1c/values/Lotes!A:E?key=AIzaSyCtphtCkdB2jxj6rmBUM4zTwuXB2TXPGHg';
+const URL_PLANILLA = 'https://sheets.googleapis.com/v4/spreadsheets/1QLcE47cV3ZwKjQyr1-WyIE0ULQYTWf8VzeJjm6I3x_M/values/Lotes!A:E?key=AIzaSyCtphtCkdB2jxj6rmBUM4zTwuXB2TXPGHg';
 
 /* Zoom al abrir cada vista: 0 = lo más abierto, 100 = lo más cerrado */
 const ZOOM_INICIAL = 30;
