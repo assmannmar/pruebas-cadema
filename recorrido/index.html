@@ -723,12 +723,14 @@ function marcadoresDe(v) {
   return lista;
 }
 
-/* Al llegar a una vista sigue mirando hacia el mismo punto cardinal.
-   Si alguna de las dos vistas no tiene "rumbo", usa el yaw/pitch inicial del destino. */
-function posicionDeLlegada(destino, rumboCamara) {
-  const d = VISTAS.find(v => v.id === destino);
-  if (rumboCamara == null || d.rumbo == null) return { yaw: rad(d.yaw), pitch: rad(d.pitch) };
-  return { yaw: rad(rumboCamara - d.rumbo), pitch: rad(d.pitch) };
+/* Al abrir o llegar a una vista, la cámara arranca mirando hacia el botón 360 de esa vista.
+   Si la vista no tiene botón, usa su yaw/pitch inicial. */
+function puntoDeMira(v) {
+  const boton = (v.puntos || []).find(p => !p.altura);
+  return boton ? { yaw: rad(boton.yaw), pitch: rad(boton.pitch) } : { yaw: rad(v.yaw), pitch: rad(v.pitch) };
+}
+function posicionDeLlegada(destino) {
+  return puntoDeMira(VISTAS.find(v => v.id === destino));
 }
 
 /* ---------- Visor ---------- */
@@ -742,8 +744,8 @@ let navegando = false;
 const visor = new Viewer({
   container: document.getElementById('visor'),
   panorama: rutaFoto(primera.imagen),
-  defaultYaw: rad(primera.yaw),
-  defaultPitch: rad(primera.pitch),
+  defaultYaw: puntoDeMira(primera).yaw,
+  defaultPitch: puntoDeMira(primera).pitch,
   defaultZoomLvl: ZOOM_INICIAL,
   navbar: false,
   loadingTxt: 'Cargando…',
@@ -779,9 +781,6 @@ async function irA(id, haciaSalto = null) {
   if (!v) return;
   navegando = true;
 
-  // Punto cardinal hacia donde se mira al saltar (hacia el salto, o hacia donde estaba mirando)
-  const yawOrigen = haciaSalto ? haciaSalto.yaw : visor.getPosition().yaw;
-  const rumboCamara = origen.rumbo != null ? origen.rumbo + grados(yawOrigen) : null;
 
   try {
     // Si vino de un salto: gira y se acerca un poco hacia él, como "caminando"
@@ -793,7 +792,7 @@ async function irA(id, haciaSalto = null) {
     vistaActual = id;
     marcarActiva();
     await visor.setPanorama(rutaFoto(v.imagen), {
-      position: posicionDeLlegada(id, rumboCamara),
+      position: posicionDeLlegada(id),
       zoom: ZOOM_INICIAL,
       transition: { speed: 900, rotation: false, effect: 'fade' },
     });
