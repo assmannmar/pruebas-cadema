@@ -114,8 +114,9 @@
 
   button:focus-visible { outline: 2px solid var(--marca); outline-offset: 2px; }
 
-  /* --- Saltos entre vistas: óvalo translúcido estilo Street View --- */
-  .salto { width: 108px; height: 62px; cursor: pointer; transition: transform .15s; }
+  /* --- Saltos entre vistas: círculo translúcido sobre el terreno --- */
+  .salto { width: 108px; height: 56px; cursor: pointer; transition: transform .15s;
+    filter: drop-shadow(0 1px 3px rgba(0,0,0,.45)); }
   .salto:hover { transform: scale(1.08); }
   .salto svg { display: block; width: 100%; height: 100%; }
 
@@ -269,26 +270,12 @@ const ZOOM_INICIAL = 30;
 const VISTAS = [
   { id: "v1", titulo: "Vista 1, a 157 m", imagen: "./recorrido/fotos/v1.jpg", miniatura: "./recorrido/fotos/v1-min.jpg",
     rumbo: 112.5, yaw: 0, pitch: -15,
-    puntos: [ { a: "v2", yaw: 1, pitch: -20, texto: "Vista 2, a 291 m" } ],
-    anchoRef: 6080, lotes: {} },
-
-  { id: "v2", titulo: "Vista 2, a 291 m", imagen: "./recorrido/fotos/v2.jpg", miniatura: "./recorrido/fotos/v2-min.jpg",
-    rumbo: 112.2, yaw: 0, pitch: -25,
-    puntos: [ { a: "v1", yaw: -179, pitch: -34, texto: "Vista 1, a 157 m" },
-              { a: "v3", yaw: 1,    pitch: -53, texto: "Vista 3, a 334 m" } ],
+    puntos: [ { a: "v3", yaw: 1, pitch: -14, texto: "Vista 3, a 334 m" } ],
     anchoRef: 6080, lotes: {} },
 
   { id: "v3", titulo: "Vista 3, a 334 m", imagen: "./recorrido/fotos/v3.jpg", miniatura: "./recorrido/fotos/v3-min.jpg",
     rumbo: 110.3, yaw: 0, pitch: -25,
-    puntos: [ { a: "v2", yaw: -177, pitch: -57, texto: "Vista 2, a 291 m" },
-              { a: "v4", altura: "bajar", texto: "Bajar a 74 m" } ],
-    anchoRef: 6080, lotes: {} },
-
-  { id: "v4", titulo: "Vista 4, a 74 m", imagen: "./recorrido/fotos/v4.jpg", miniatura: "./recorrido/fotos/v4-min.jpg",
-    rumbo: 291.4, yaw: 0, pitch: -10,
-    puntos: [ { a: "v2", yaw: -1, pitch: -19, texto: "Vista 2, a 291 m" },
-              { a: "v1", yaw: 1,  pitch: -6.5, texto: "Vista 1, a 157 m" },
-              { a: "v3", altura: "subir", texto: "Subir a 334 m" } ],
+    puntos: [ { a: "v1", yaw: -177, pitch: -27, texto: "Vista 1, a 157 m" } ],
     anchoRef: 6080, lotes: {} }
 ];
 
@@ -362,16 +349,12 @@ function tooltipHTML(id, fila) {
   return `<div class="detalle-lote"><div class="detalle-lote-titulo">Lote ${id}</div>${filas}</div>`;
 }
 
-/* ---------- Ícono de salto (óvalo con chevron) ---------- */
+/* ---------- Ícono de salto: círculo translúcido apoyado en el terreno ---------- */
 const ICONO_SALTO =
   '<svg viewBox="0 0 190 100" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">' +
-    '<defs><radialGradient id="ovaloPunto" cx="50%" cy="50%" r="50%">' +
-      '<stop offset="55%" stop-color="#e8e8e8" stop-opacity=".55"/>' +
-      '<stop offset="100%" stop-color="#e8e8e8" stop-opacity="0"/>' +
-    '</radialGradient></defs>' +
-    '<ellipse cx="95" cy="50" rx="92" ry="48" fill="url(#ovaloPunto)"/>' +
-    '<path d="M55 66 L95 34 L135 66" fill="none" stroke="#6b6b6b" stroke-opacity=".8" ' +
-      'stroke-width="20" stroke-linecap="round" stroke-linejoin="round"/>' +
+    '<ellipse cx="95" cy="50" rx="86" ry="44" fill="#ffffff" fill-opacity=".18" ' +
+      'stroke="#ffffff" stroke-opacity=".85" stroke-width="7"/>' +
+    '<ellipse cx="95" cy="50" rx="20" ry="10" fill="#ffffff" fill-opacity=".85"/>' +
   '</svg>';
 const escaparTexto = t => String(t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
