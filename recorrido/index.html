@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Recorrido virtual del loteo</title>
+<title>La Amelia | Recorrido virtual</title>
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -19,6 +19,7 @@
     --texto: #f3f5ef;
     --texto-suave: rgba(243, 245, 239, .72);
     --marca: #f0c94a;
+    --salto: #4aaec3;   /* color del botón 360 */
     --fuente: "Manrope", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
 
     /* Colores de disponibilidad: suaves, para no tapar la foto */
@@ -72,7 +73,7 @@
   /* --- Botones de subir / bajar --- */
   .alturas {
     position: fixed; z-index: 10; left: 0; right: 0;
-    bottom: calc(80px + env(safe-area-inset-bottom, 0px));
+    bottom: calc(24px + env(safe-area-inset-bottom, 0px));
     display: flex; justify-content: center; gap: 8px; pointer-events: none;
   }
   .alturas:empty { display: none; }
@@ -84,42 +85,39 @@
   .altura:hover { background: rgba(18, 26, 24, .9); }
   .altura svg { width: 18px; height: 18px; }
 
-  /* --- Barra inferior de vistas --- */
-  .barra {
-    position: fixed; z-index: 10; left: 0; right: 0;
-    bottom: calc(14px + env(safe-area-inset-bottom, 0px));
-    display: flex; justify-content: center; gap: 8px;
-    padding: 0 14px; pointer-events: none;
-  }
-  .barra > * { pointer-events: auto; }
-  .barra .btn-redondo { flex: none; }
-  .vistas {
-    display: flex; gap: 6px; padding: 5px; max-width: min(100%, 860px);
-    overflow-x: auto; scrollbar-width: none; border-radius: 26px;
-  }
-  .vistas::-webkit-scrollbar { display: none; }
-  .vista {
-    flex: none; display: flex; align-items: center; gap: 9px;
-    padding: 4px 16px 4px 4px; border: 0; border-radius: 22px; cursor: pointer;
-    background: transparent; color: var(--texto-suave);
-    font: 600 14px/1 var(--fuente); white-space: nowrap;
-    transition: background .15s, color .15s;
-  }
-  .vista:hover { background: rgba(255, 255, 255, .09); color: var(--texto); }
-  .vista img {
-    width: 38px; height: 38px; border-radius: 50%; object-fit: cover;
-    background: #26332f; border: 2px solid transparent;
-  }
-  .vista.activa { background: var(--marca); color: #1b1a10; }
-  .vista.activa img { border-color: #1b1a10; }
-
   button:focus-visible { outline: 2px solid var(--marca); outline-offset: 2px; }
 
-  /* --- Saltos entre vistas: círculo translúcido sobre el terreno --- */
-  .salto { width: 108px; height: 56px; cursor: pointer; transition: transform .15s;
-    filter: drop-shadow(0 1px 3px rgba(0,0,0,.45)); }
-  .salto:hover { transform: scale(1.08); }
-  .salto svg { display: block; width: 100%; height: 100%; }
+  /* --- Saltos entre vistas: botón "360" que late --- */
+  .salto360 {
+    position: relative; width: 78px; height: 78px; border-radius: 50%;
+    border: 3px solid #fff; padding: 5px; cursor: pointer;
+    box-shadow: 0 2px 10px rgba(0,0,0,.35);
+    animation: latido 1.6s ease-in-out infinite;
+  }
+  .salto360 .disco {
+    width: 100%; height: 100%; border-radius: 50%;
+    background: var(--salto, #4aaec3); display: grid; place-items: center;
+  }
+  .salto360 .disco svg { width: 78%; height: 78%; display: block; }
+  .salto360 .onda {
+    position: absolute; inset: -3px; border-radius: 50%;
+    border: 2px solid rgba(255,255,255,.8); pointer-events: none;
+    animation: onda 1.6s ease-out infinite;
+  }
+  .salto360:hover { animation-play-state: paused; transform: scale(1.1); }
+  @keyframes latido {
+    0%, 100% { transform: scale(1); }
+    15% { transform: scale(1.09); }
+    30% { transform: scale(.98); }
+    45% { transform: scale(1.05); }
+  }
+  @keyframes onda {
+    0% { transform: scale(1); opacity: .9; }
+    100% { transform: scale(1.55); opacity: 0; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .salto360, .salto360 .onda { animation: none; }
+  }
 
   /* --- Número de lote siempre visible --- */
   .lote-label {
@@ -129,6 +127,7 @@
     border: 1.5px solid rgba(255,255,255,.9); box-shadow: 0 1px 2px rgba(0,0,0,.35);
     pointer-events: none;
   }
+  .psv-marker.marcador-numero, .psv-marker.marcador-numero * { pointer-events: none !important; }
   /* Lote bajo el mouse: se ilumina un poco */
   .psv-markers-svg-container .psv-marker--has-tooltip { transition: filter .15s; }
   .psv-markers-svg-container .psv-marker--has-tooltip:hover { filter: brightness(1.45) saturate(1.2); }
@@ -141,10 +140,7 @@
     border-radius: 5px; padding: 0; min-width: 190px;
     border: 1px solid #222; box-shadow: none; overflow: hidden;
   }
-  .tooltip-lote .psv-tooltip-arrow {
-    border-top-color: #fff !important; border-bottom-color: #fff !important;
-    border-left-color: #fff !important; border-right-color: #fff !important;
-  }
+  .tooltip-lote .psv-tooltip-arrow { display: none; }
   .detalle-lote { padding: 10px 14px 12px; }
   .detalle-lote-titulo {
     font-size: .85rem; font-weight: 600; letter-spacing: .2px; color: #111;
@@ -184,8 +180,6 @@
   .editor button[aria-pressed="true"] { background: #fff; }
 
   @media (max-width: 560px) {
-    .vista span { display: none; }
-    .vista { padding: 4px; }
     .titulo strong { font-size: 16px; }
     .leyenda { font-size: 11px; }
   }
@@ -199,8 +193,8 @@
 <div id="visor"></div>
 
 <div class="titulo vidrio">
-  <small id="nombre-proyecto">Recorrido virtual</small>
-  <strong id="nombre-vista"></strong>
+  <small>Recorrido virtual</small>
+  <strong id="nombre-proyecto">La Amelia</strong>
   <div class="leyenda" aria-label="Referencias">
     <span><i style="background:var(--disponible)"></i>Disponible</span>
     <span><i style="background:var(--reservado)"></i>Reservado</span>
@@ -215,16 +209,6 @@
 </button>
 
 <div class="alturas" id="alturas"></div>
-
-<div class="barra">
-  <button class="btn-redondo vidrio" id="anterior" aria-label="Vista anterior">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>
-  </button>
-  <nav class="vistas vidrio" id="menu" aria-label="Puntos de vista"></nav>
-  <button class="btn-redondo vidrio" id="siguiente" aria-label="Vista siguiente">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg>
-  </button>
-</div>
 
 <script type="importmap">
 {
@@ -244,7 +228,7 @@ import { MarkersPlugin } from '@photo-sphere-viewer/markers-plugin';
    CONFIGURACIÓN — es lo único que hace falta editar
    ===================================================================== */
 
-const NOMBRE_PROYECTO = "Recorrido virtual del loteo";
+const NOMBRE_PROYECTO = "La Amelia";
 
 /* Planilla de disponibilidad (columnas A:E = lote, superficie, estado, contado, lista).
    Restringí la key en Google Cloud a tu dominio (Referentes HTTP), porque queda visible. */
@@ -662,13 +646,15 @@ function tooltipHTML(id, fila) {
   return `<div class="detalle-lote"><div class="detalle-lote-titulo">Lote ${id}</div>${filas}</div>`;
 }
 
-/* ---------- Ícono de salto: círculo translúcido apoyado en el terreno ---------- */
+/* ---------- Botón de salto: "360°" con flecha circular ---------- */
 const ICONO_SALTO =
-  '<svg viewBox="0 0 190 100" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">' +
-    '<ellipse cx="95" cy="50" rx="86" ry="44" fill="#ffffff" fill-opacity=".18" ' +
-      'stroke="#ffffff" stroke-opacity=".85" stroke-width="7"/>' +
-    '<ellipse cx="95" cy="50" rx="20" ry="10" fill="#ffffff" fill-opacity=".85"/>' +
-  '</svg>';
+  '<span class="onda"></span>' +
+  '<div class="disco"><svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">' +
+    '<text x="50" y="52" text-anchor="middle" fill="#fff" ' +
+      'style="font: 700 30px Manrope, system-ui, sans-serif; letter-spacing: -.5px">360°</text>' +
+    '<path d="M27 58 C12 64 20 76 50 76 C66 76 76 73 81 68" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round"/>' +
+    '<path d="M72 63 L82 68 L73 74" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>' +
+  '</svg></div>';
 const escaparTexto = t => String(t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
 /* ---------- Disponibilidad (planilla) ---------- */
@@ -685,10 +671,9 @@ function marcadoresDe(v) {
     lista.push({
       id: 'salto-' + i,
       position: { yaw: rad(p.yaw), pitch: rad(p.pitch) },
-      html: `<div class="salto" role="button" aria-label="Ir a ${escaparTexto(p.texto)}">${ICONO_SALTO}</div>`,
+      html: `<div class="salto360" role="button" aria-label="Ir a ${escaparTexto(p.texto)}">${ICONO_SALTO}</div>`,
       anchor: 'center center',
       zIndex: 20,
-      tooltip: { content: escaparTexto(p.texto), position: 'top center' },
       data: { tipo: 'salto', a: p.a },
     });
   });
@@ -719,6 +704,7 @@ function marcadoresDe(v) {
       position: { yaw, pitch },
       html: `<div class="lote-label" style="background-color:${colorBadge(estado)}">${escaparTexto(id)}</div>`,
       anchor: 'center center',
+      className: 'marcador-numero',
       zIndex: 5,
     });
   });
@@ -736,7 +722,7 @@ function posicionDeLlegada(destino, rumboCamara) {
 
 /* ---------- Visor ---------- */
 document.getElementById("nombre-proyecto").textContent = NOMBRE_PROYECTO;
-document.title = NOMBRE_PROYECTO;
+document.title = NOMBRE_PROYECTO + " | Recorrido virtual";
 
 const primera = VISTAS[0];
 let vistaActual = primera.id;
@@ -756,8 +742,23 @@ const marcadores = visor.getPlugin(MarkersPlugin);
 
 visor.addEventListener('ready', () => marcadores.setMarkers(marcadoresDe(primera)), { once: true });
 
+let loteAbierto = null;
+let ultimoToqueLote = 0;
+function cerrarDetalle() {
+  if (loteAbierto) { try { marcadores.hideMarkerTooltip(loteAbierto); } catch (e) {} }
+  loteAbierto = null;
+}
 marcadores.addEventListener('select-marker', ({ marker }) => {
-  if (marker.data?.tipo === 'salto') irA(marker.data.a, marker.config.position);
+  if (marker.data?.tipo === 'salto') { cerrarDetalle(); irA(marker.data.a, marker.config.position); return; }
+  if (marker.data?.tipo === 'lote') {
+    ultimoToqueLote = Date.now();
+    if (loteAbierto && loteAbierto !== marker.id) cerrarDetalle();
+    loteAbierto = marker.id;
+    marcadores.showMarkerTooltip(marker.id);
+  }
+});
+visor.addEventListener('click', () => {
+  setTimeout(() => { if (Date.now() - ultimoToqueLote > 250) cerrarDetalle(); }, 0);
 });
 
 async function irA(id, haciaSalto = null) {
@@ -776,6 +777,7 @@ async function irA(id, haciaSalto = null) {
     if (haciaSalto && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
       await visor.animate({ yaw: haciaSalto.yaw, pitch: 0, zoom: Math.min(100, visor.getZoomLevel() + 20), speed: 450 });
     }
+    cerrarDetalle();
     marcadores.clearMarkers();
     vistaActual = id;
     marcarActiva();
@@ -791,20 +793,6 @@ async function irA(id, haciaSalto = null) {
     navegando = false;
   }
 }
-
-/* ---------- Menú de vistas ---------- */
-const menu = document.getElementById("menu");
-VISTAS.forEach(v => {
-  const b = document.createElement("button");
-  b.className = "vista";
-  b.dataset.id = v.id;
-  b.innerHTML = '<img alt="" loading="lazy"><span></span>';
-  b.querySelector("img").src = v.miniatura || v.imagen;
-  b.querySelector("span").textContent = v.titulo;
-  b.setAttribute("aria-label", v.titulo);
-  b.addEventListener("click", () => irA(v.id));
-  menu.appendChild(b);
-});
 
 const alturas = document.getElementById("alturas");
 const FLECHA_ALTURA = {
@@ -827,29 +815,8 @@ function mostrarAlturas(v) {
 function marcarActiva() {
   const v = VISTAS.find(x => x.id === vistaActual);
   if (v) mostrarAlturas(v);
-  document.getElementById("nombre-vista").textContent = v ? v.titulo : "";
-  menu.querySelectorAll(".vista").forEach(b => {
-    const activa = b.dataset.id === vistaActual;
-    b.classList.toggle("activa", activa);
-    b.setAttribute("aria-current", activa ? "true" : "false");
-    if (activa) b.scrollIntoView({ block: "nearest", inline: "center", behavior: "smooth" });
-  });
 }
 marcarActiva();
-
-const indiceActual = () => VISTAS.findIndex(v => v.id === vistaActual);
-document.getElementById("anterior").addEventListener("click", () =>
-  irA(VISTAS[(indiceActual() - 1 + VISTAS.length) % VISTAS.length].id));
-document.getElementById("siguiente").addEventListener("click", () =>
-  irA(VISTAS[(indiceActual() + 1) % VISTAS.length].id));
-document.getElementById("pantalla-completa").addEventListener("click", () => visor.toggleFullscreen());
-
-/* Shift + flechas izquierda/derecha cambian de vista */
-document.addEventListener("keydown", e => {
-  if (!e.shiftKey) return;
-  if (e.key === "ArrowRight") document.getElementById("siguiente").click();
-  if (e.key === "ArrowLeft") document.getElementById("anterior").click();
-});
 
 /* ---------- Carga de la planilla ---------- */
 avisoDatos.textContent = 'Cargando disponibilidad…';
