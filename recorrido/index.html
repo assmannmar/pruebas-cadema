@@ -7,9 +7,9 @@
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/pannellum/2.5.6/pannellum.css">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pannellum/2.5.6/pannellum.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700&family=Montserrat:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@photo-sphere-viewer/core@5.15.1/index.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@photo-sphere-viewer/markers-plugin@5.15.1/index.css">
 
 <style>
   :root {
@@ -20,25 +20,70 @@
     --texto-suave: rgba(243, 245, 239, .72);
     --marca: #f0c94a;
     --fuente: "Manrope", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+
+    --disponible: #4a8f3c;
+    --reservado: #b8920a;
+    --vendido: #c0392b;
+    --no-disponible: #555;
   }
   * { box-sizing: border-box; }
-  html, body { margin: 0; height: 100%; background: #0c1210; font-family: var(--fuente); color: var(--texto); }
-  #panorama { position: fixed; inset: 0; }
+  html, body { margin: 0; height: 100%; background: #0c1210; font-family: var(--fuente); color: var(--texto); overflow: hidden; }
+  #visor { position: fixed; inset: 0; }
 
-  /* --- Título --- */
+  .vidrio {
+    background: var(--panel); border: 1px solid var(--linea);
+    backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+  }
+
+  /* --- Título + leyenda --- */
   .titulo {
     position: fixed; z-index: 10;
     top: calc(14px + env(safe-area-inset-top, 0px)); left: 14px;
-    max-width: calc(100% - 120px);
-    padding: 10px 16px 11px;
-    background: var(--panel); border: 1px solid var(--linea); border-radius: 14px;
-    backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+    max-width: calc(100% - 90px);
+    padding: 10px 16px 11px; border-radius: 14px;
     pointer-events: none;
   }
   .titulo small { display: block; font-size: 12px; font-weight: 500; color: var(--texto-suave); margin-bottom: 2px; }
-  .titulo strong { font-size: 18px; font-weight: 700; letter-spacing: -.01em; }
+  .titulo strong { display: block; font-size: 18px; font-weight: 700; letter-spacing: -.01em; }
+  .leyenda {
+    display: flex; flex-wrap: wrap; gap: 4px 12px; margin-top: 8px; padding-top: 8px;
+    border-top: 1px solid var(--linea);
+    font-size: 12px; font-weight: 600; color: var(--texto-suave);
+  }
+  .leyenda span { display: inline-flex; align-items: center; gap: 5px; }
+  .leyenda i { width: 9px; height: 9px; border-radius: 50%; border: 1.5px solid #fff; }
+  .estado-datos { margin-top: 6px; font-size: 12px; color: var(--marca); }
+  .estado-datos:empty { display: none; }
 
-  /* --- Barra inferior --- */
+  /* --- Pantalla completa --- */
+  .btn-redondo {
+    width: 46px; height: 46px; border-radius: 50%;
+    display: grid; place-items: center; cursor: pointer; color: var(--texto);
+    transition: background .15s;
+  }
+  .btn-redondo:hover { background: rgba(18, 26, 24, .9); }
+  .btn-redondo svg { width: 20px; height: 20px; }
+  #pantalla-completa {
+    position: fixed; z-index: 10;
+    top: calc(14px + env(safe-area-inset-top, 0px)); right: 14px;
+  }
+
+  /* --- Botones de subir / bajar --- */
+  .alturas {
+    position: fixed; z-index: 10; left: 0; right: 0;
+    bottom: calc(80px + env(safe-area-inset-bottom, 0px));
+    display: flex; justify-content: center; gap: 8px; pointer-events: none;
+  }
+  .alturas:empty { display: none; }
+  .altura {
+    pointer-events: auto; display: inline-flex; align-items: center; gap: 8px;
+    padding: 10px 16px 10px 12px; border-radius: 22px; cursor: pointer;
+    color: var(--texto); font: 700 14px/1 var(--fuente);
+  }
+  .altura:hover { background: rgba(18, 26, 24, .9); }
+  .altura svg { width: 18px; height: 18px; }
+
+  /* --- Barra inferior de vistas --- */
   .barra {
     position: fixed; z-index: 10; left: 0; right: 0;
     bottom: calc(14px + env(safe-area-inset-bottom, 0px));
@@ -46,21 +91,10 @@
     padding: 0 14px; pointer-events: none;
   }
   .barra > * { pointer-events: auto; }
-  .flecha {
-    flex: none; width: 46px; height: 46px; border-radius: 50%;
-    display: grid; place-items: center; cursor: pointer;
-    background: var(--panel); border: 1px solid var(--linea); color: var(--texto);
-    backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
-    transition: background .15s;
-  }
-  .flecha:hover { background: rgba(18, 26, 24, .9); }
-  .flecha svg { width: 20px; height: 20px; }
-
+  .barra .btn-redondo { flex: none; }
   .vistas {
     display: flex; gap: 6px; padding: 5px; max-width: min(100%, 860px);
-    overflow-x: auto; scrollbar-width: none;
-    background: var(--panel); border: 1px solid var(--linea); border-radius: 26px;
-    backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+    overflow-x: auto; scrollbar-width: none; border-radius: 26px;
   }
   .vistas::-webkit-scrollbar { display: none; }
   .vista {
@@ -78,155 +112,211 @@
   .vista.activa { background: var(--marca); color: #1b1a10; }
   .vista.activa img { border-color: #1b1a10; }
 
-  /* --- Hotspots: óvalo translúcido con flecha, estilo Google Street View --- */
-  .pnlm-hotspot-base.punto {
-    width: 108px; height: 62px;
-    cursor: pointer; transition: transform .15s;
+  button:focus-visible { outline: 2px solid var(--marca); outline-offset: 2px; }
+
+  /* --- Saltos entre vistas: óvalo translúcido estilo Street View --- */
+  .salto { width: 108px; height: 62px; cursor: pointer; transition: transform .15s; }
+  .salto:hover { transform: scale(1.08); }
+  .salto svg { display: block; width: 100%; height: 100%; }
+
+  /* --- Número de lote siempre visible --- */
+  .lote-label {
+    width: 26px; height: 26px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; font: 600 12px 'Montserrat', Arial, sans-serif;
+    border: 2px solid #fff; box-shadow: 0 1px 3px rgba(0,0,0,.5);
+    pointer-events: none;
   }
-  .pnlm-hotspot-base.punto:hover { transform: scale(1.08); }
-  .punto svg { position: absolute; inset: 0; width: 108px; height: 62px; }
+
+  /* --- Cuadrito de detalle del lote (igual al del proyecto de lotes) --- */
+  .tooltip-lote .psv-tooltip-content {
+    background-color: #fff; color: #000;
+    font-family: 'Montserrat', Arial, Helvetica, sans-serif; font-weight: 400;
+    -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale;
+    border-radius: 5px; padding: 0; min-width: 190px;
+    border: 1px solid #222; box-shadow: none; overflow: hidden;
+  }
+  .tooltip-lote .psv-tooltip-arrow {
+    border-top-color: #fff !important; border-bottom-color: #fff !important;
+    border-left-color: #fff !important; border-right-color: #fff !important;
+  }
+  .detalle-lote { padding: 10px 14px 12px; }
+  .detalle-lote-titulo {
+    font-size: .85rem; font-weight: 600; letter-spacing: .2px; color: #111;
+    margin: 0 0 8px; padding-bottom: 6px; border-bottom: 1px solid #eee;
+  }
+  .detalle-lote-fila {
+    display: flex; justify-content: space-between; align-items: baseline; gap: 16px;
+    font-size: .75rem; line-height: 1.5; padding: 1px 0;
+  }
+  .detalle-lote-fila .valor { font-weight: 600; text-align: right; }
+  .estado-disponible { color: var(--disponible); }
+  .estado-reservado { color: var(--reservado); }
+  .estado-vendido { color: var(--vendido); }
+  .estado-no-disponible { color: var(--no-disponible); }
 
   /* --- Modo editor (agregar ?editar a la URL) --- */
   .editor {
-    position: fixed; z-index: 20; right: 14px; top: calc(14px + env(safe-area-inset-top, 0px));
-    width: min(340px, calc(100% - 28px)); padding: 14px;
-    background: var(--panel-solid); border: 1px solid var(--linea); border-radius: 14px;
+    position: fixed; z-index: 20; right: 14px; top: calc(70px + env(safe-area-inset-top, 0px));
+    width: min(340px, calc(100% - 28px)); max-height: calc(100% - 180px); overflow: auto;
+    padding: 14px; background: var(--panel-solid); border: 1px solid var(--linea); border-radius: 14px;
     font-size: 13px; line-height: 1.45;
   }
+  .editor h3 { margin: 0 0 6px; font-size: 13px; }
+  .editor section + section { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--linea); }
   .editor p { margin: 0 0 8px; color: var(--texto-suave); }
   .editor code {
     display: block; padding: 9px 10px; border-radius: 8px; background: #0a0f0e;
     font: 12px/1.4 ui-monospace, Menlo, Consolas, monospace; color: var(--marca);
-    user-select: all; word-break: break-all;
+    user-select: all; word-break: break-all; max-height: 140px; overflow: auto;
   }
+  .editor .acciones { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
   .editor button {
-    margin-top: 8px; padding: 8px 12px; border: 0; border-radius: 8px; cursor: pointer;
+    padding: 8px 12px; border: 0; border-radius: 8px; cursor: pointer;
     background: var(--marca); color: #1b1a10; font: 700 13px var(--fuente);
   }
+  .editor button.secundario { background: rgba(255,255,255,.12); color: var(--texto); }
+  .editor button[aria-pressed="true"] { background: #fff; }
 
-  .barra .flecha:focus-visible, .vista:focus-visible { outline: 2px solid var(--marca); outline-offset: 2px; }
   @media (max-width: 560px) {
     .vista span { display: none; }
     .vista { padding: 4px; }
     .titulo strong { font-size: 16px; }
+    .leyenda { font-size: 11px; }
   }
   @media (prefers-reduced-motion: reduce) {
-    .punto::after { animation: none; }
     * { transition: none !important; }
   }
 </style>
 </head>
 <body>
 
-<div id="panorama"></div>
+<div id="visor"></div>
 
-<div class="titulo">
+<div class="titulo vidrio">
   <small id="nombre-proyecto">Recorrido virtual</small>
   <strong id="nombre-vista"></strong>
+  <div class="leyenda" aria-label="Referencias">
+    <span><i style="background:var(--disponible)"></i>Disponible</span>
+    <span><i style="background:var(--reservado)"></i>Reservado</span>
+    <span><i style="background:var(--vendido)"></i>Vendido</span>
+    <span><i style="background:var(--no-disponible)"></i>No disponible</span>
+  </div>
+  <div class="estado-datos" id="estado-datos"></div>
 </div>
 
+<button class="btn-redondo vidrio" id="pantalla-completa" aria-label="Pantalla completa">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>
+</button>
+
+<div class="alturas" id="alturas"></div>
+
 <div class="barra">
-  <button class="flecha" id="anterior" aria-label="Vista anterior">
+  <button class="btn-redondo vidrio" id="anterior" aria-label="Vista anterior">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>
   </button>
-  <nav class="vistas" id="menu" aria-label="Puntos de vista"></nav>
-  <button class="flecha" id="siguiente" aria-label="Vista siguiente">
+  <nav class="vistas vidrio" id="menu" aria-label="Puntos de vista"></nav>
+  <button class="btn-redondo vidrio" id="siguiente" aria-label="Vista siguiente">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg>
   </button>
 </div>
 
-<script>
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.185.1/build/three.module.js",
+    "@photo-sphere-viewer/core": "https://cdn.jsdelivr.net/npm/@photo-sphere-viewer/core@5.15.1/index.module.js",
+    "@photo-sphere-viewer/markers-plugin": "https://cdn.jsdelivr.net/npm/@photo-sphere-viewer/markers-plugin@5.15.1/index.module.js"
+  }
+}
+</script>
+
+<script type="module">
+import { Viewer } from '@photo-sphere-viewer/core';
+import { MarkersPlugin } from '@photo-sphere-viewer/markers-plugin';
+
 /* =====================================================================
    CONFIGURACIÓN — es lo único que hace falta editar
    ===================================================================== */
 
 const NOMBRE_PROYECTO = "Recorrido virtual del loteo";
 
-/*  Cada vista:
-      id        nombre interno, sin espacios ni tildes
-      titulo    lo que ve la persona (cambialo por el nombre real de cada punto)
-      imagen    foto 360 (equirectangular 2:1)
-      miniatura foto chica para el menú
-      yaw       hacia dónde mira al abrir (-180 a 180, 0 = centro de la foto)
-      puntos    saltos hacia otras vistas: { a: "id-destino", yaw, pitch, texto }
+/* Planilla de disponibilidad (columnas A:E = lote, superficie, estado, contado, lista).
+   Restringí la key en Google Cloud a tu dominio (Referentes HTTP), porque queda visible. */
+const URL_PLANILLA = 'https://sheets.googleapis.com/v4/spreadsheets/1EY4qfcYKgItLwEhLlCJTGxG-o5SdWoE_edjhvq11R1c/values/Lotes!A:E?key=AIzaSyCtphtCkdB2jxj6rmBUM4zTwuXB2TXPGHg';
 
-    Para ajustar la posición de un punto: abrí el recorrido con
-    index.html?editar  y hacé doble clic donde lo quieras. Te da yaw y pitch.
+/* Zoom al abrir cada vista: 0 = lo más abierto, 100 = lo más cerrado */
+const ZOOM_INICIAL = 30;
+
+/*  Cada vista:
+      id         nombre interno, sin espacios ni tildes
+      titulo     lo que ve la persona
+      imagen     foto 360 (equirectangular 2:1)
+      miniatura  foto chica para el menú
+      rumbo      hacia dónde apunta el centro de la foto, en grados desde el Norte
+                 (sirve para que al saltar sigas mirando hacia el mismo lado)
+      yaw/pitch  hacia dónde mira al abrir, en grados (yaw -180 a 180, 0 = centro de la foto)
+      puntos     saltos hacia otras vistas:
+                   { a: "id-destino", yaw, pitch, texto }  → óvalo sobre el terreno
+                   { a: "id-destino", altura: "subir" | "bajar", texto } → botón en pantalla
+                   (para fotos tomadas en el mismo lugar a otra altura)
+      anchoRef   ancho en píxeles de la foto sobre la que marcaste los lotes
+      lotes      { "número de lote": [[x, y], [x, y], ...] } en píxeles de esa foto de referencia
+
+    Los saltos de estas 4 vistas están calculados con el GPS y la altura del dron.
+    Para ajustar uno a mano: abrí index.html?editar y hacé doble clic.
 */
 const VISTAS = [
-  { id: "p1", titulo: "Entrada", imagen: "./fotos/p1.jpg", miniatura: "./fotos/p1-min.jpg",
-    yaw: -70, pitch: -5, hfov: 90,
-    puntos: [ { a: "p2", yaw: -105, pitch: -8, texto: "Punto 2" } ] },
+  { id: "v1", titulo: "Vista 1, a 157 m", imagen: "./fotos/v1.jpg", miniatura: "./fotos/v1-min.jpg",
+    rumbo: 112.5, yaw: 0, pitch: -15,
+    puntos: [ { a: "v2", yaw: 1, pitch: -20, texto: "Vista 2, a 291 m" } ],
+    anchoRef: 6080, lotes: {} },
 
-  { id: "p2", titulo: "Punto 2", imagen: "./fotos/p2.jpg", miniatura: "./fotos/p2-min.jpg",
-    yaw: -107, pitch: -5, hfov: 90,
-    puntos: [ { a: "p1", yaw: 69,   pitch: -8, texto: "Entrada" },
-              { a: "p3", yaw: -107, pitch: -8, texto: "Punto 3" } ] },
+  { id: "v2", titulo: "Vista 2, a 291 m", imagen: "./fotos/v2.jpg", miniatura: "./fotos/v2-min.jpg",
+    rumbo: 112.2, yaw: 0, pitch: -25,
+    puntos: [ { a: "v1", yaw: -179, pitch: -34, texto: "Vista 1, a 157 m" },
+              { a: "v3", yaw: 1,    pitch: -53, texto: "Vista 3, a 334 m" } ],
+    anchoRef: 6080, lotes: {} },
 
-  { id: "p3", titulo: "Punto 3", imagen: "./fotos/p3.jpg", miniatura: "./fotos/p3-min.jpg",
-    yaw: -107, pitch: -5, hfov: 90,
-    puntos: [ { a: "p2", yaw: 69,   pitch: -8, texto: "Punto 2" },
-              { a: "p4", yaw: -107, pitch: -8, texto: "Punto 4" } ] },
+  { id: "v3", titulo: "Vista 3, a 334 m", imagen: "./fotos/v3.jpg", miniatura: "./fotos/v3-min.jpg",
+    rumbo: 110.3, yaw: 0, pitch: -25,
+    puntos: [ { a: "v2", yaw: -177, pitch: -57, texto: "Vista 2, a 291 m" },
+              { a: "v4", altura: "bajar", texto: "Bajar a 74 m" } ],
+    anchoRef: 6080, lotes: {} },
 
-  { id: "p4", titulo: "Punto 4", imagen: "./fotos/p4.jpg", miniatura: "./fotos/p4-min.jpg",
-    yaw: -130, pitch: -5, hfov: 90,
-    puntos: [ { a: "p3", yaw: 52,   pitch: -8, texto: "Punto 3" },
-              { a: "p5", yaw: -130, pitch: -8, texto: "Punto 5" } ] },
-
-  { id: "p5", titulo: "Punto 5", imagen: "./fotos/p5.jpg", miniatura: "./fotos/p5-min.jpg",
-    yaw: -114, pitch: -5, hfov: 90,
-    puntos: [ { a: "p4", yaw: 66,   pitch: -8, texto: "Punto 4" },
-              { a: "p6", yaw: -114, pitch: -8, texto: "Punto 6" } ] },
-
-  { id: "p6", titulo: "Punto 6", imagen: "./fotos/p6.jpg", miniatura: "./fotos/p6-min.jpg",
-    yaw: -131, pitch: -5, hfov: 90,
-    puntos: [ { a: "p5", yaw: 58,   pitch: -8, texto: "Punto 5" },
-              { a: "p7", yaw: -131, pitch: -8, texto: "Punto 7" } ] },
-
-  { id: "p7", titulo: "Punto 7", imagen: "./fotos/p7.jpg", miniatura: "./fotos/p7-min.jpg",
-    yaw: -134, pitch: -5, hfov: 90,
-    puntos: [ { a: "p6", yaw: 65,   pitch: -8, texto: "Punto 6" },
-              { a: "p8", yaw: -134, pitch: -8, texto: "Punto 8" } ] },
-
-  { id: "p8", titulo: "Punto 8", imagen: "./fotos/p8.jpg", miniatura: "./fotos/p8-min.jpg",
-    yaw: 110, pitch: -5, hfov: 90,
-    puntos: [ { a: "p7", yaw: 9, pitch: -8, texto: "Punto 7" } ] }
+  { id: "v4", titulo: "Vista 4, a 74 m", imagen: "./fotos/v4.jpg", miniatura: "./fotos/v4-min.jpg",
+    rumbo: 291.4, yaw: 0, pitch: -10,
+    puntos: [ { a: "v2", yaw: -1, pitch: -19, texto: "Vista 2, a 291 m" },
+              { a: "v1", yaw: 1,  pitch: -6.5, texto: "Vista 1, a 157 m" },
+              { a: "v3", altura: "subir", texto: "Subir a 334 m" } ],
+    anchoRef: 6080, lotes: {} }
 ];
 
 /* =====================================================================
    A partir de acá no hace falta tocar nada
    ===================================================================== */
 
-/* Óvalo translúcido con chevron, igual al de Google Street View */
-const ICONO_SALTO =
-  '<svg viewBox="0 0 190 100" xmlns="http://www.w3.org/2000/svg">' +
-    '<defs><radialGradient id="ovaloPunto" cx="50%" cy="50%" r="50%">' +
-      '<stop offset="55%" stop-color="#e8e8e8" stop-opacity=".55"/>' +
-      '<stop offset="100%" stop-color="#e8e8e8" stop-opacity="0"/>' +
-    '</radialGradient></defs>' +
-    '<ellipse cx="95" cy="50" rx="92" ry="48" fill="url(#ovaloPunto)"/>' +
-    '<path d="M55 66 L95 34 L135 66" fill="none" stroke="#6b6b6b" stroke-opacity=".8" ' +
-      'stroke-width="20" stroke-linecap="round" stroke-linejoin="round"/>' +
-  '</svg>';
+const ANCHO_REF_POR_DEFECTO = 1920;
+const rad = g => g * Math.PI / 180;
+const grados = r => { let g = r * 180 / Math.PI; if (g > 180) g -= 360; return g; };
 
-document.getElementById("nombre-proyecto").textContent = NOMBRE_PROYECTO;
-document.title = NOMBRE_PROYECTO;
-
-function crearPunto(div, args) {
-  div.classList.add("punto");
-  div.setAttribute("role", "button");
-  div.setAttribute("aria-label", "Ir a " + args.texto);   // solo para lectores de pantalla, no se ve
-  div.innerHTML = ICONO_SALTO;
+/* Píxel de la foto de referencia → ángulos (yaw, pitch) en radianes, y al revés */
+function pixelAAngulo([x, y], ancho) {
+  const alto = ancho / 2;
+  return [(x / ancho) * 2 * Math.PI - Math.PI, Math.PI / 2 - (y / alto) * Math.PI];
+}
+function anguloAPixel(yaw, pitch, ancho) {
+  let x = ((yaw + Math.PI) / (2 * Math.PI)) * ancho;
+  x = ((x % ancho) + ancho) % ancho;
+  const y = ((Math.PI / 2 - pitch) / Math.PI) * (ancho / 2);
+  return [Math.round(x * 10) / 10, Math.round(y * 10) / 10];
+}
+function centroide(puntos) {
+  const s = puntos.reduce((a, p) => [a[0] + p[0], a[1] + p[1]], [0, 0]);
+  return [s[0] / puntos.length, s[1] / puntos.length];
 }
 
-/* Al llegar a una vista, mira hacia el otro punto de salto (el que sigue el camino) */
-function yawDeLlegada(destino, origen) {
-  const d = VISTAS.find(v => v.id === destino);
-  const otro = (d.puntos || []).find(p => p.a !== origen);
-  return otro ? otro.yaw : d.yaw;
-}
-
-/* Si el dispositivo no aguanta imágenes de 6080 px de ancho, usa la versión "-lite" (4096 px) */
+/* Si el dispositivo no aguanta fotos de 6080 px de ancho, usa la versión "-lite" (4096 px) */
 const TEXTURA_MAX = (() => {
   try {
     const c = document.createElement("canvas");
@@ -237,36 +327,173 @@ const TEXTURA_MAX = (() => {
 const USAR_LITE = TEXTURA_MAX > 0 && TEXTURA_MAX < 6080;
 const rutaFoto = ruta => USAR_LITE ? ruta.replace(/\.jpg$/, "-lite.jpg") : ruta;
 
-const escenas = {};
-VISTAS.forEach(v => {
-  escenas[v.id] = {
-    title: v.titulo,
-    type: "equirectangular",
-    panorama: rutaFoto(v.imagen),
-    yaw: v.yaw, pitch: v.pitch, hfov: v.hfov,
-    hotSpots: (v.puntos || []).map(p => ({
-      type: "scene", sceneId: p.a, pitch: p.pitch, yaw: p.yaw, text: p.texto,
-      targetYaw: yawDeLlegada(p.a, v.id), targetPitch: -5, targetHfov: 90,
-      cssClass: "punto", createTooltipFunc: crearPunto, createTooltipArgs: { texto: p.texto }
-    }))
-  };
+/* ---------- Estados y estilos de lotes ---------- */
+const COLOR_BADGE = { 'Disponible': '#4a8f3c', 'Reservado': '#b8920a', 'Vendido': '#c0392b' };
+const colorBadge = estado => COLOR_BADGE[estado] || '#555';
+
+function estiloPorEstado(estado) {
+  switch (estado) {
+    case 'Disponible': return { fill: 'rgba(95,156,87,0.35)', stroke: 'rgba(95,156,87,0.9)' };
+    case 'Reservado':  return { fill: 'rgba(255,255,0,0.5)',  stroke: 'rgba(200,200,0,0.9)' };
+    case 'Vendido':    return { fill: 'rgba(255,0,0,0.5)',    stroke: 'rgba(200,0,0,0.9)' };
+    case 'No Disponible':
+    case 'Desarrollador': return { fill: 'rgba(0,0,0,0.5)', stroke: 'rgba(0,0,0,0.9)' };
+    default: return { fill: 'rgba(150,150,150,0.4)', stroke: 'rgba(150,150,150,0.9)' };
+  }
+}
+const textoEstado = e => e === 'Desarrollador' ? 'No Disponible' : e;
+function claseEstado(e) {
+  return { 'Disponible': 'estado-disponible', 'Reservado': 'estado-reservado', 'Vendido': 'estado-vendido' }[e]
+    || 'estado-no-disponible';
+}
+
+function tooltipHTML(id, fila) {
+  if (!fila) {
+    return `<div class="detalle-lote"><div class="detalle-lote-titulo">Lote ${id}</div>
+      <div class="detalle-lote-fila"><span>Estado</span><span class="valor">Sin datos</span></div></div>`;
+  }
+  const [, superficie, estado, , valorLista] = fila;
+  let filas = `
+    <div class="detalle-lote-fila"><span>Superficie</span><span class="valor">${superficie} m2</span></div>
+    <div class="detalle-lote-fila"><span>Estado</span><span class="valor ${claseEstado(estado)}">${textoEstado(estado)}</span></div>`;
+  if (estado === 'Disponible') {
+    filas += `<div class="detalle-lote-fila"><span>Precio Lista</span><span class="valor">${valorLista}</span></div>`;
+  }
+  return `<div class="detalle-lote"><div class="detalle-lote-titulo">Lote ${id}</div>${filas}</div>`;
+}
+
+/* ---------- Ícono de salto (óvalo con chevron) ---------- */
+const ICONO_SALTO =
+  '<svg viewBox="0 0 190 100" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">' +
+    '<defs><radialGradient id="ovaloPunto" cx="50%" cy="50%" r="50%">' +
+      '<stop offset="55%" stop-color="#e8e8e8" stop-opacity=".55"/>' +
+      '<stop offset="100%" stop-color="#e8e8e8" stop-opacity="0"/>' +
+    '</radialGradient></defs>' +
+    '<ellipse cx="95" cy="50" rx="92" ry="48" fill="url(#ovaloPunto)"/>' +
+    '<path d="M55 66 L95 34 L135 66" fill="none" stroke="#6b6b6b" stroke-opacity=".8" ' +
+      'stroke-width="20" stroke-linecap="round" stroke-linejoin="round"/>' +
+  '</svg>';
+const escaparTexto = t => String(t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+/* ---------- Disponibilidad (planilla) ---------- */
+let estadoDatos = 'cargando';          // 'cargando' | 'ok' | 'error'
+const DISPONIBILIDAD = {};             // "id" → fila [id, superficie, estado, contado, lista]
+const avisoDatos = document.getElementById('estado-datos');
+
+/* ---------- Marcadores de cada vista ---------- */
+function marcadoresDe(v) {
+  const lista = [];
+
+  (v.puntos || []).forEach((p, i) => {
+    if (p.altura) return;   // los de altura van como botón en pantalla
+    lista.push({
+      id: 'salto-' + i,
+      position: { yaw: rad(p.yaw), pitch: rad(p.pitch) },
+      html: `<div class="salto" role="button" aria-label="Ir a ${escaparTexto(p.texto)}">${ICONO_SALTO}</div>`,
+      anchor: 'center center',
+      zIndex: 20,
+      tooltip: { content: escaparTexto(p.texto), position: 'top center' },
+      data: { tipo: 'salto', a: p.a },
+    });
+  });
+
+  if (estadoDatos === 'cargando') return lista;
+
+  const ancho = v.anchoRef || ANCHO_REF_POR_DEFECTO;
+  Object.entries(v.lotes || {}).forEach(([id, puntos]) => {
+    const fila = DISPONIBILIDAD[id];
+    if (estadoDatos === 'ok' && !fila) return;   // lote que no está en la planilla: no se dibuja
+    const estado = fila ? fila[2] : null;
+    const estilo = estiloPorEstado(estado);
+
+    lista.push({
+      id: 'lote-' + id,
+      polygon: puntos.map(p => pixelAAngulo(p, ancho)),
+      svgStyle: { fill: estilo.fill, stroke: estilo.stroke, strokeWidth: '2px' },
+      tooltip: { content: tooltipHTML(id, fila), className: 'tooltip-lote', trigger: 'hover' },
+      data: { tipo: 'lote', id },
+    });
+
+    const [yaw, pitch] = pixelAAngulo(centroide(puntos), ancho);
+    lista.push({
+      id: 'label-' + id,
+      position: { yaw, pitch },
+      html: `<div class="lote-label" style="background-color:${colorBadge(estado)}">${escaparTexto(id)}</div>`,
+      anchor: 'center center',
+      zIndex: 5,
+    });
+  });
+
+  return lista;
+}
+
+/* Al llegar a una vista sigue mirando hacia el mismo punto cardinal.
+   Si alguna de las dos vistas no tiene "rumbo", usa el yaw/pitch inicial del destino. */
+function posicionDeLlegada(destino, rumboCamara) {
+  const d = VISTAS.find(v => v.id === destino);
+  if (rumboCamara == null || d.rumbo == null) return { yaw: rad(d.yaw), pitch: rad(d.pitch) };
+  return { yaw: rad(rumboCamara - d.rumbo), pitch: rad(d.pitch) };
+}
+
+/* ---------- Visor ---------- */
+document.getElementById("nombre-proyecto").textContent = NOMBRE_PROYECTO;
+document.title = NOMBRE_PROYECTO;
+
+const primera = VISTAS[0];
+let vistaActual = primera.id;
+let navegando = false;
+
+const visor = new Viewer({
+  container: document.getElementById('visor'),
+  panorama: rutaFoto(primera.imagen),
+  defaultYaw: rad(primera.yaw),
+  defaultPitch: rad(primera.pitch),
+  defaultZoomLvl: ZOOM_INICIAL,
+  navbar: false,
+  loadingTxt: 'Cargando…',
+  plugins: [[MarkersPlugin, { markers: [], clickEventOnMarker: true }]],
+});
+const marcadores = visor.getPlugin(MarkersPlugin);
+
+visor.addEventListener('ready', () => marcadores.setMarkers(marcadoresDe(primera)), { once: true });
+
+marcadores.addEventListener('select-marker', ({ marker }) => {
+  if (marker.data?.tipo === 'salto') irA(marker.data.a, marker.config.position);
 });
 
-const visor = pannellum.viewer("panorama", {
-  default: {
-    firstScene: VISTAS[0].id,
-    sceneFadeDuration: 900,
-    autoLoad: true,
-    showControls: true,
-    compass: false,
-    minHfov: 50, maxHfov: 120,
-    minPitch: -40, maxPitch: 60,
-    strings: { loadButtonLabel: "Tocá para cargar", loadingLabel: "Cargando…", bylineLabel: "" }
-  },
-  scenes: escenas
-});
+async function irA(id, haciaSalto = null) {
+  if (navegando || id === vistaActual) return;
+  const v = VISTAS.find(x => x.id === id);
+  const origen = VISTAS.find(x => x.id === vistaActual);
+  if (!v) return;
+  navegando = true;
 
-/* --- Menú de vistas --- */
+  // Punto cardinal hacia donde se mira al saltar (hacia el salto, o hacia donde estaba mirando)
+  const yawOrigen = haciaSalto ? haciaSalto.yaw : visor.getPosition().yaw;
+  const rumboCamara = origen.rumbo != null ? origen.rumbo + grados(yawOrigen) : null;
+
+  try {
+    // Si vino de un salto: gira y se acerca un poco hacia él, como "caminando"
+    if (haciaSalto && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      await visor.animate({ yaw: haciaSalto.yaw, pitch: 0, zoom: Math.min(100, visor.getZoomLevel() + 20), speed: 450 });
+    }
+    marcadores.clearMarkers();
+    vistaActual = id;
+    marcarActiva();
+    await visor.setPanorama(rutaFoto(v.imagen), {
+      position: posicionDeLlegada(id, rumboCamara),
+      zoom: ZOOM_INICIAL,
+      transition: { speed: 900, rotation: false, effect: 'fade' },
+    });
+    marcadores.setMarkers(marcadoresDe(v));
+  } catch (e) {
+    console.error('No se pudo abrir la vista', id, e);
+  } finally {
+    navegando = false;
+  }
+}
+
+/* ---------- Menú de vistas ---------- */
 const menu = document.getElementById("menu");
 VISTAS.forEach(v => {
   const b = document.createElement("button");
@@ -280,60 +507,146 @@ VISTAS.forEach(v => {
   menu.appendChild(b);
 });
 
-function irA(id) {
-  if (id === visor.getScene()) return;
-  visor.loadScene(id);
+const alturas = document.getElementById("alturas");
+const FLECHA_ALTURA = {
+  subir: '<path d="M12 19V5M6 11l6-6 6 6"/>',
+  bajar: '<path d="M12 5v14M6 13l6 6 6-6"/>'
+};
+function mostrarAlturas(v) {
+  alturas.innerHTML = "";
+  (v.puntos || []).filter(p => p.altura).forEach(p => {
+    const b = document.createElement("button");
+    b.className = "altura vidrio";
+    b.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" ' +
+      'stroke-linecap="round" stroke-linejoin="round">' + (FLECHA_ALTURA[p.altura] || FLECHA_ALTURA.subir) + '</svg><span></span>';
+    b.querySelector("span").textContent = p.texto;
+    b.addEventListener("click", () => irA(p.a));
+    alturas.appendChild(b);
+  });
 }
 
-function indiceActual() { return VISTAS.findIndex(v => v.id === visor.getScene()); }
-document.getElementById("anterior").addEventListener("click", () => {
-  irA(VISTAS[(indiceActual() - 1 + VISTAS.length) % VISTAS.length].id);
-});
-document.getElementById("siguiente").addEventListener("click", () => {
-  irA(VISTAS[(indiceActual() + 1) % VISTAS.length].id);
-});
-
 function marcarActiva() {
-  const id = visor.getScene();
-  const v = VISTAS.find(x => x.id === id);
+  const v = VISTAS.find(x => x.id === vistaActual);
+  if (v) mostrarAlturas(v);
   document.getElementById("nombre-vista").textContent = v ? v.titulo : "";
   menu.querySelectorAll(".vista").forEach(b => {
-    const activa = b.dataset.id === id;
+    const activa = b.dataset.id === vistaActual;
     b.classList.toggle("activa", activa);
+    b.setAttribute("aria-current", activa ? "true" : "false");
     if (activa) b.scrollIntoView({ block: "nearest", inline: "center", behavior: "smooth" });
   });
 }
-visor.on("scenechange", marcarActiva);
-visor.on("load", marcarActiva);
 marcarActiva();
 
-/* Teclado: flechas izquierda/derecha cambian de vista con Shift */
+const indiceActual = () => VISTAS.findIndex(v => v.id === vistaActual);
+document.getElementById("anterior").addEventListener("click", () =>
+  irA(VISTAS[(indiceActual() - 1 + VISTAS.length) % VISTAS.length].id));
+document.getElementById("siguiente").addEventListener("click", () =>
+  irA(VISTAS[(indiceActual() + 1) % VISTAS.length].id));
+document.getElementById("pantalla-completa").addEventListener("click", () => visor.toggleFullscreen());
+
+/* Shift + flechas izquierda/derecha cambian de vista */
 document.addEventListener("keydown", e => {
   if (!e.shiftKey) return;
   if (e.key === "ArrowRight") document.getElementById("siguiente").click();
   if (e.key === "ArrowLeft") document.getElementById("anterior").click();
 });
 
-/* --- Modo editor: index.html?editar --- */
+/* ---------- Carga de la planilla ---------- */
+avisoDatos.textContent = 'Cargando disponibilidad…';
+fetch(URL_PLANILLA)
+  .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+  .then(data => {
+    (data.values || []).forEach(fila => {
+      if (fila[0] != null) DISPONIBILIDAD[String(fila[0]).trim()] = fila;
+    });
+    estadoDatos = 'ok';
+    avisoDatos.textContent = '';
+  })
+  .catch(err => {
+    console.error('Error cargando datos de Sheets:', err);
+    estadoDatos = 'error';
+    avisoDatos.textContent = 'No se pudo cargar la disponibilidad. Los lotes se muestran sin estado.';
+  })
+  .finally(() => {
+    if (!navegando && visor.state.ready) {
+      marcadores.setMarkers(marcadoresDe(VISTAS.find(v => v.id === vistaActual)));
+    }
+  });
+
+/* =====================================================================
+   Modo editor: index.html?editar
+   ===================================================================== */
 if (new URLSearchParams(location.search).has("editar")) {
   const panel = document.createElement("div");
   panel.className = "editor";
-  panel.innerHTML =
-    '<p><b>Modo editor.</b> Hacé doble clic en la foto donde quieras un punto de salto. ' +
-    'Copiá la línea y pegala en <i>puntos</i> de esa vista (cambiá <i>id-destino</i> y el texto).</p>' +
-    '<code id="ed-salida">Todavía no hiciste clic</code>' +
-    '<button id="ed-copiar" type="button">Copiar</button>';
+  panel.innerHTML = `
+    <section>
+      <h3>Punto de salto</h3>
+      <p>Doble clic en la foto donde quieras el salto. Pegalo en <i>puntos</i> de esta vista y cambiá el destino y el texto.</p>
+      <code id="ed-salto">Todavía no hiciste doble clic</code>
+      <div class="acciones"><button type="button" data-copiar="ed-salto">Copiar</button></div>
+    </section>
+    <section>
+      <h3>Lote</h3>
+      <p>Activá el dibujo y hacé clic en cada esquina del lote, en orden. Pegalo en <i>lotes</i> de esta vista.
+         Las coordenadas usan el <i>anchoRef</i> de la vista (o ${ANCHO_REF_POR_DEFECTO} si no tiene).</p>
+      <div class="acciones">
+        <button type="button" id="ed-dibujar" aria-pressed="false">Dibujar lote</button>
+        <button type="button" class="secundario" id="ed-deshacer">Deshacer</button>
+        <button type="button" class="secundario" id="ed-limpiar">Empezar otro</button>
+      </div>
+      <code id="ed-lote" style="margin-top:8px">Sin puntos</code>
+      <div class="acciones"><button type="button" data-copiar="ed-lote">Copiar</button></div>
+    </section>`;
   document.body.appendChild(panel);
 
-  visor.getContainer().addEventListener("dblclick", e => {
-    const [pitch, yaw] = visor.mouseEventToCoords(e);
-    document.getElementById("ed-salida").textContent =
-      '{ a: "id-destino", yaw: ' + yaw.toFixed(0) + ', pitch: ' + pitch.toFixed(0) + ', texto: "Nombre" },';
+  let dibujando = false;
+  let puntosLote = [];   // en radianes [yaw, pitch]
+  const anchoVista = () => VISTAS.find(v => v.id === vistaActual).anchoRef || ANCHO_REF_POR_DEFECTO;
+
+  function actualizarLote() {
+    try { marcadores.removeMarker('editor-lote'); } catch (e) {}
+    if (puntosLote.length >= 2) {
+      const forma = puntosLote.length >= 3 ? 'polygon' : 'polyline';
+      marcadores.addMarker({
+        id: 'editor-lote', [forma]: puntosLote,
+        svgStyle: { fill: 'rgba(240,201,74,.3)', stroke: '#f0c94a', strokeWidth: '2px', strokeDasharray: '6 4' },
+      });
+    }
+    const ancho = anchoVista();
+    const px = puntosLote.map(([y, p]) => anguloAPixel(y, p, ancho));
+    document.getElementById('ed-lote').textContent = px.length
+      ? `"ID": ${JSON.stringify(px)},`
+      : 'Sin puntos';
+  }
+
+  visor.addEventListener('dblclick', ({ data }) => {
+    if (dibujando) return;
+    document.getElementById("ed-salto").textContent =
+      `{ a: "id-destino", yaw: ${grados(data.yaw).toFixed(0)}, pitch: ${grados(data.pitch).toFixed(0)}, texto: "Nombre" },`;
   });
-  document.getElementById("ed-copiar").addEventListener("click", () => {
-    const t = document.getElementById("ed-salida").textContent;
+  visor.addEventListener('click', ({ data }) => {
+    if (!dibujando || data.rightclick) return;
+    puntosLote.push([data.yaw, data.pitch]);
+    actualizarLote();
+  });
+
+  const btnDibujar = document.getElementById('ed-dibujar');
+  btnDibujar.addEventListener('click', () => {
+    dibujando = !dibujando;
+    btnDibujar.setAttribute('aria-pressed', String(dibujando));
+    btnDibujar.textContent = dibujando ? 'Dibujando… (clic para pausar)' : 'Dibujar lote';
+  });
+  document.getElementById('ed-deshacer').addEventListener('click', () => { puntosLote.pop(); actualizarLote(); });
+  document.getElementById('ed-limpiar').addEventListener('click', () => { puntosLote = []; actualizarLote(); });
+  panel.querySelectorAll('[data-copiar]').forEach(b => b.addEventListener('click', () => {
+    const t = document.getElementById(b.dataset.copiar).textContent;
     if (navigator.clipboard) navigator.clipboard.writeText(t);
-  });
+  }));
+
+  // Al cambiar de vista se descarta el dibujo en curso
+  visor.addEventListener('panorama-load', () => { puntosLote = []; actualizarLote(); });
 }
 </script>
 </body>
