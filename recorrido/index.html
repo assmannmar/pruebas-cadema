@@ -141,6 +141,9 @@
     border: 1px solid #222; box-shadow: none; overflow: hidden;
   }
   .tooltip-lote .psv-tooltip-arrow { display: none; }
+  /* Sin sombras: ni en el texto ni en el fondo que pone el visor detrás del cuadro */
+  .psv-tooltip.tooltip-lote { background: transparent; box-shadow: none; }
+  .tooltip-lote .psv-tooltip-content, .tooltip-lote .psv-tooltip-content * { text-shadow: none !important; }
 
   /* Cartelito del botón 360 */
   .psv-tooltip.tooltip-salto { max-width: none; background: rgba(18, 26, 24, .9); border-radius: 8px; }
@@ -613,8 +616,8 @@ const rutaFoto = ruta => USAR_LITE ? ruta.replace(/\.jpg$/, "-lite.jpg") : ruta;
 /* ---------- Estados y estilos de lotes ---------- */
 /* Número de lote: mismo color que el relleno, semitransparente */
 const COLOR_BADGE = {
-  'Disponible': 'rgba(78,140,88,.85)', 'Reservado': 'rgba(176,140,40,.85)', 'Vendido': 'rgba(168,74,64,.85)',
-  'No Disponible': 'rgba(60,60,60,.8)', 'Desarrollador': 'rgba(60,60,60,.8)'
+  'Disponible': 'rgba(95,178,107,.9)', 'Reservado': 'rgba(234,189,67,.9)', 'Vendido': 'rgba(207,75,61,.9)',
+  'No Disponible': 'rgba(40,40,40,.85)', 'Desarrollador': 'rgba(40,40,40,.85)'
 };
 const colorBadge = estado => COLOR_BADGE[estado] || 'rgba(40,40,40,.55)';
 
@@ -624,11 +627,11 @@ const ANCHO_BORDE = '1.5px';
 
 function estiloPorEstado(estado) {
   switch (estado) {
-    case 'Disponible': return { fill: 'rgba(111,174,120,0.28)' };
-    case 'Reservado':  return { fill: 'rgba(217,183,90,0.30)' };
-    case 'Vendido':    return { fill: 'rgba(201,105,95,0.30)' };
+    case 'Disponible': return { fill: 'rgba(95,178,107,0.28)' };
+    case 'Reservado':  return { fill: 'rgba(234,189,67,0.30)' };
+    case 'Vendido':    return { fill: 'rgba(207,75,61,0.30)' };
     case 'No Disponible':
-    case 'Desarrollador': return { fill: 'rgba(30,30,30,0.35)' };
+    case 'Desarrollador': return { fill: 'rgba(40,40,40,0.35)' };
     default: return { fill: 'rgba(255,255,255,0.08)' };   // sin datos de la planilla
   }
 }
@@ -655,7 +658,7 @@ function tooltipHTML(id, fila) {
 
 /* ---------- Botón de salto: "360°" con flecha circular ---------- */
 /* Texto que aparece al pasar el mouse por el botón 360 */
-const TEXTO_SALTO = "Ir a la vista 360° desde este punto";
+const TEXTO_SALTO = "Ir a la vista 360 desde este punto";
 
 const ICONO_SALTO =
   '<span class="onda"></span>' +
