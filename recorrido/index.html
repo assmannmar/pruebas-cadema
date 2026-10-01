@@ -41,7 +41,7 @@
   .titulo {
     position: fixed; z-index: 10;
     top: calc(14px + env(safe-area-inset-top, 0px)); left: 14px;
-    max-width: calc(100% - 90px);
+    max-width: calc(100% - 150px);   /* deja lugar a los botones de financiación y pantalla completa */
     padding: 10px 16px 11px; border-radius: 14px;
     pointer-events: none;
   }
@@ -189,6 +189,91 @@
   .editor button.secundario { background: rgba(255,255,255,.12); color: var(--texto); }
   .editor button[aria-pressed="true"] { background: #fff; }
 
+  /* --- Calculadora de financiación --- */
+  .btn-financiacion {
+    position: fixed; z-index: 10;
+    top: calc(14px + env(safe-area-inset-top, 0px)); right: 70px;
+    height: 46px; padding: 0 16px 0 13px; border-radius: 23px; cursor: pointer;
+    display: inline-flex; align-items: center; gap: 8px;
+    color: var(--texto); font: 700 14px/1 var(--fuente);
+  }
+  .btn-financiacion:hover { background: rgba(18, 26, 24, .9); }
+  .btn-financiacion svg { width: 19px; height: 19px; }
+  .tooltip-lote .detalle-lote-cta {
+    margin-top: 7px; padding-top: 6px; border-top: 1px solid #eee;
+    font-size: .7rem; font-weight: 600; color: #16467a;
+  }
+
+  .fin-fondo {
+    --fin-azul: #16467a; --fin-texto: #1d2733; --fin-suave: #6b7480; --fin-linea: #d5d9de;
+    position: fixed; inset: 0; z-index: 40; display: grid; place-items: center; padding: 16px;
+    background: rgba(8, 12, 11, .5);
+  }
+  .fin-fondo[hidden] { display: none; }
+  .fin-card {
+    position: relative; width: min(460px, 100%); max-height: calc(100dvh - 32px); overflow: auto;
+    padding: 26px 26px 22px; border-radius: 22px; background: #fff; color: var(--fin-texto);
+    font-family: var(--fuente); box-shadow: 0 18px 50px rgba(0,0,0,.35);
+  }
+  .fin-card h2 { margin: 0 34px 4px 0; font-size: 21px; font-weight: 700; color: var(--fin-azul); letter-spacing: -.01em; }
+  .fin-card .fin-sub { margin: 0 0 18px; font-size: 13px; color: var(--fin-suave); }
+  .fin-card section + section { margin-top: 20px; }
+  .fin-card h3 { margin: 0 0 6px; font-size: 17px; font-weight: 700; color: var(--fin-azul); }
+  .fin-cerrar {
+    position: absolute; top: 16px; right: 16px; width: 34px; height: 34px; border: 0; border-radius: 50%;
+    display: grid; place-items: center; cursor: pointer; background: #eef1f4; color: var(--fin-texto);
+  }
+  .fin-cerrar svg { width: 16px; height: 16px; }
+  .fin-fila {
+    display: flex; align-items: baseline; justify-content: space-between; gap: 12px;
+    padding: 9px 0 7px; border-bottom: 1px solid var(--fin-linea); font-size: 14px;
+  }
+  .fin-fila > span { color: var(--fin-suave); white-space: nowrap; }
+  .fin-fila b { font-weight: 700; text-align: right; }
+  .fin-fila input {
+    flex: 1; min-width: 0; border: 0; outline: 0; background: transparent; text-align: right;
+    font: 700 15px var(--fuente); color: var(--fin-texto);
+  }
+  .fin-fila:focus-within { border-bottom-color: var(--fin-azul); }
+  .fin-fila input::placeholder { color: #b3b9c0; font-weight: 500; }
+  .fin-fila input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
+  .fin-fila input::-webkit-outer-spin-button, .fin-fila input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+  .fin-ayuda { margin: 0 0 4px; font-size: 13px; line-height: 1.4; color: var(--fin-suave); }
+  .fin-aviso { margin: 8px 0 0; font-size: 12.5px; line-height: 1.4; color: #a4471f; }
+  .fin-aviso[hidden] { display: none; }
+
+  .fin-opciones {
+    display: flex; flex-wrap: wrap; padding: 3px; gap: 2px;
+    border: 1px solid var(--fin-azul); border-radius: 12px;
+  }
+  .fin-opciones button {
+    flex: 1 1 0; min-width: 44px; height: 40px; border: 0; border-radius: 9px; cursor: pointer;
+    background: transparent; color: var(--fin-azul); font: 600 15px var(--fuente);
+  }
+  .fin-opciones button[aria-checked="true"] { background: var(--fin-azul); color: #fff; }
+  .fin-opciones button:focus-visible { outline: 2px solid var(--fin-azul); outline-offset: 1px; }
+
+  .fin-resultado { padding-top: 4px; }
+  .fin-resultado .fin-cabecera { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 8px; }
+  .fin-resultado .fin-cabecera h3 { margin: 0; }
+  .fin-moneda { flex: 0 0 auto; }
+  .fin-moneda button { min-width: 64px; height: 32px; font-size: 13px; }
+  .fin-valor {
+    padding: 14px 16px; border-radius: 14px; background: #f1f5f9;
+    font-size: 30px; font-weight: 700; color: var(--fin-azul); letter-spacing: -.01em;
+    font-variant-numeric: tabular-nums;
+  }
+  .fin-valor small { display: block; margin-top: 2px; font-size: 13px; font-weight: 600; color: var(--fin-suave); letter-spacing: 0; }
+  .fin-valor.vacio { font-size: 14px; font-weight: 500; color: var(--fin-suave); }
+  .fin-nota { margin: 10px 0 0; font-size: 12px; line-height: 1.45; color: var(--fin-suave); }
+
+  @media (max-width: 560px) {
+    .btn-financiacion span { display: none; }
+    .btn-financiacion { width: 46px; padding: 0; justify-content: center; }
+    .fin-card { padding: 22px 18px 18px; }
+    .fin-valor { font-size: 26px; }
+  }
+
   @media (max-width: 560px) {
     .titulo strong { font-size: 16px; }
     .leyenda { font-size: 11px; }
@@ -220,6 +305,53 @@
 
 <div class="alturas" id="alturas"></div>
 
+<button class="btn-financiacion vidrio" id="abrir-financiacion" type="button" aria-label="Calcular financiación">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="3" width="14" height="18" rx="2.5"/><path d="M8.5 7h7M8.5 11h1M12 11h1M15.5 11h0M8.5 14.5h1M12 14.5h1M15.5 14.5v3M8.5 18h1M12 18h1"/></svg>
+  <span>Calcular financiación</span>
+</button>
+
+<div class="fin-fondo" id="fin" hidden>
+  <div class="fin-card" role="dialog" aria-modal="true" aria-labelledby="fin-titulo">
+    <button class="fin-cerrar" id="fin-cerrar" type="button" aria-label="Cerrar">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
+    </button>
+    <h2 id="fin-titulo">Calculá tu financiación</h2>
+    <p class="fin-sub">Simulación de referencia. Un asesor te confirma el plan final.</p>
+
+    <section>
+      <h3>Información del lote</h3>
+      <label class="fin-fila"><span>Número de lote</span><input id="fin-lote" type="text" inputmode="numeric" placeholder="Ej: 12" autocomplete="off"></label>
+      <div class="fin-fila"><span>Superficie</span><b id="fin-superficie">—</b></div>
+      <div class="fin-fila"><span>Precio</span><b id="fin-precio">—</b></div>
+      <p class="fin-aviso" id="fin-aviso-lote" hidden></p>
+    </section>
+
+    <section>
+      <h3>Monto del anticipo</h3>
+      <p class="fin-ayuda" id="fin-ayuda-anticipo">Elegí un lote para ver el anticipo mínimo.</p>
+      <label class="fin-fila"><span>Monto en US$</span><input id="fin-anticipo" type="number" inputmode="numeric" min="0" step="100" placeholder="Ej: 10000"></label>
+      <p class="fin-aviso" id="fin-aviso-anticipo" hidden></p>
+    </section>
+
+    <section>
+      <h3>Cantidad de cuotas</h3>
+      <div class="fin-opciones" id="fin-cuotas" role="radiogroup" aria-label="Cantidad de cuotas"></div>
+    </section>
+
+    <section class="fin-resultado">
+      <div class="fin-cabecera">
+        <h3>Valor de cuota</h3>
+        <div class="fin-opciones fin-moneda" id="fin-moneda" role="radiogroup" aria-label="Moneda">
+          <button type="button" role="radio" data-moneda="usd" aria-checked="true">US$</button>
+          <button type="button" role="radio" data-moneda="ars" aria-checked="false">Pesos</button>
+        </div>
+      </div>
+      <div class="fin-valor vacio" id="fin-valor" aria-live="polite">Completá los datos para ver la cuota.</div>
+      <p class="fin-nota" id="fin-nota"></p>
+    </section>
+  </div>
+</div>
+
 <script type="importmap">
 {
   "imports": {
@@ -243,6 +375,21 @@ const NOMBRE_PROYECTO = "La Amelia";
 /* Planilla de disponibilidad (columnas A:E = lote, superficie, estado, contado, lista).
    Restringí la key en Google Cloud a tu dominio (Referentes HTTP), porque queda visible. */
 const URL_PLANILLA = 'https://sheets.googleapis.com/v4/spreadsheets/1QLcE47cV3ZwKjQyr1-WyIE0ULQYTWf8VzeJjm6I3x_M/values/Lotes!A:E?key=AIzaSyCtphtCkdB2jxj6rmBUM4zTwuXB2TXPGHg';
+
+/* Calculadora de financiación (botón "Calcular financiación" y toque sobre un lote disponible).
+   Usa la MISMA planilla de configuración que el simulador interno de vendedores:
+   de la fila de este barrio toma Tasa_Anual, Plazo_Maximo y URL_Lista (lista de lotes,
+   de donde salen el precio y el Anticipo_Minimo de cada lote).
+     barrio     nombre tal cual figura en la columna "Barrio" de la planilla de configuración
+     pesos      cómo se calcula la cuota en pesos:
+                  "cac-oficial" → (precio − anticipo) pasado a pesos al dólar oficial venta,
+                                  dividido por la cantidad de cuotas = 1ra cuota; luego ajusta por CAC
+                  "blue"        → cuota en US$ (con interés) × dólar blue venta */
+const FINANCIACION = {
+  barrio: NOMBRE_PROYECTO,
+  urlConfig: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQtifmnsS0iysnpnOiHaJRinTS6uwHtAG97U6TtRbKUkq7kCPYraiG9raHah5Boljb0ISsGB3h1-H3S/pub?gid=0&single=true&output=csv',
+  pesos: 'cac-oficial',
+};
 
 /* Zoom al abrir cada vista: 0 = lo más abierto, 100 = lo más cerrado */
 const ZOOM_INICIAL = 30;
@@ -651,7 +798,8 @@ function tooltipHTML(id, fila) {
     <div class="detalle-lote-fila"><span>Superficie</span><span class="valor">${superficie} m2</span></div>
     <div class="detalle-lote-fila"><span>Estado</span><span class="valor ${claseEstado(estado)}">${textoEstado(estado)}</span></div>`;
   if (estado === 'Disponible') {
-    filas += `<div class="detalle-lote-fila"><span>Precio Lista</span><span class="valor">${valorLista}</span></div>`;
+    filas += `<div class="detalle-lote-fila"><span>Precio Lista</span><span class="valor">${valorLista}</span></div>
+      <div class="detalle-lote-cta">Tocá el lote para calcular la financiación</div>`;
   }
   return `<div class="detalle-lote"><div class="detalle-lote-titulo">Lote ${id}</div>${filas}</div>`;
 }
@@ -768,6 +916,13 @@ marcadores.addEventListener('select-marker', ({ marker }) => {
   if (marker.data?.tipo === 'salto') { cerrarDetalle(); irA(marker.data.a, marker.config.position); return; }
   if (marker.data?.tipo === 'lote') {
     ultimoToqueLote = Date.now();
+    // Lote disponible: se abre directamente la calculadora con ese lote cargado
+    if (DISPONIBILIDAD[marker.data.id]?.[2] === 'Disponible') {
+      cerrarDetalle();
+      try { marcadores.hideMarkerTooltip(marker.id); } catch (e) {}
+      abrirFinanciacion(marker.data.id);
+      return;
+    }
     if (loteAbierto && loteAbierto !== marker.id) cerrarDetalle();
     loteAbierto = marker.id;
     marcadores.showMarkerTooltip(marker.id);
@@ -852,6 +1007,324 @@ fetch(URL_PLANILLA)
       marcadores.setMarkers(marcadoresDe(VISTAS.find(v => v.id === vistaActual)));
     }
   });
+
+/* =====================================================================
+   Calculadora de financiación
+   ===================================================================== */
+
+/* --- Lectura de CSV publicados (mismo criterio que csv-utils.js del simulador interno) --- */
+function parsearCsv(texto) {
+  const filas = [];
+  let fila = [], campo = '', comillas = false;
+  for (let i = 0; i < texto.length; i++) {
+    const c = texto[i];
+    if (comillas) {
+      if (c === '"' && texto[i + 1] === '"') { campo += '"'; i++; }
+      else if (c === '"') comillas = false;
+      else campo += c;
+    } else if (c === '"') comillas = true;
+    else if (c === ',') { fila.push(campo); campo = ''; }
+    else if (c === '\n' || c === '\r') {
+      if (c === '\r' && texto[i + 1] === '\n') i++;
+      fila.push(campo); filas.push(fila); fila = []; campo = '';
+    } else campo += c;
+  }
+  if (campo !== '' || fila.length) { fila.push(campo); filas.push(fila); }
+  const [encabezado = [], ...datos] = filas.filter(f => f.some(v => v.trim() !== ''));
+  const claves = encabezado.map(normalizarClave);
+  return datos.map(f => Object.fromEntries(claves.map((k, i) => [k, (f[i] ?? '').trim()])));
+}
+function normalizarClave(t) {
+  return String(t).trim().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+}
+function buscarAlias(fila, alias) {
+  for (const a of alias) if (fila[a] != null && String(fila[a]).trim() !== '') return fila[a];
+  return null;
+}
+function parseNumero(valor) {
+  if (valor == null || valor === '') return null;
+  let s = String(valor).trim().replace(/[^\d.,-]/g, '');
+  if (!s) return null;
+  const coma = s.includes(','), punto = s.includes('.');
+  if (coma && punto) {
+    s = s.lastIndexOf(',') > s.lastIndexOf('.') ? s.replace(/\./g, '').replace(',', '.') : s.replace(/,/g, '');
+  } else if (coma) {
+    const p = s.split(',');
+    s = p.length > 1 && p[p.length - 1].length === 3 ? p.join('') : s.replace(',', '.');
+  } else if (punto) {
+    const p = s.split('.');
+    if (p.length > 1 && p[p.length - 1].length === 3) s = p.join('');
+  }
+  const n = parseFloat(s);
+  return Number.isNaN(n) ? null : n;
+}
+function parsePorcentaje(valor) {
+  const n = parseNumero(String(valor ?? '').replace('%', ''));
+  if (n === null) return 0;
+  return Math.abs(n) > 1 ? n / 100 : n;
+}
+async function descargarCsv(url) {
+  const r = await fetch(url, { cache: 'no-store' });
+  if (!r.ok) throw new Error('HTTP ' + r.status);
+  return parsearCsv(await r.text());
+}
+const claveLote = v => String(v ?? '').trim().toLowerCase().replace(/^lote\s*/, '');
+
+/* --- Fórmula: la misma del motor-financiero.js del simulador interno ---
+   Con un único anticipo en el mes 0 y sin refuerzos ni cuotas especiales,
+   simularPlan() se reduce a una cuota fija (sistema francés) sobre (precio − anticipo),
+   con tasa mensual efectiva i = (1 + tasaAnual)^(1/12) − 1. */
+const tasaMensualEfectiva = tasaAnual => Math.pow(1 + tasaAnual, 1 / 12) - 1;
+function calcularCuota(financiado, i, n) {
+  if (!n || n <= 0) return financiado;
+  if (financiado <= 0) return 0;
+  if (i === 0) return financiado / n;
+  return (financiado * i) / (1 - Math.pow(1 + i, -n));
+}
+
+/* --- Datos del barrio (tasa, plazo, lista de lotes) --- */
+const CONDICIONES = { tasaAnual: 0, plazoMaximo: 0, lotes: new Map(), estado: 'pendiente' };
+let cargaCondiciones = null;
+function cargarCondiciones() {
+  if (cargaCondiciones) return cargaCondiciones;
+  cargaCondiciones = (async () => {
+    const config = await descargarCsv(FINANCIACION.urlConfig);
+    const buscado = normalizarClave(FINANCIACION.barrio);
+    const fila = config.find(f => normalizarClave(buscarAlias(f, ['barrio', 'nombre', 'proyecto']) || '') === buscado);
+    if (!fila) throw new Error(`No se encontró "${FINANCIACION.barrio}" en la planilla de configuración.`);
+    CONDICIONES.tasaAnual = parsePorcentaje(buscarAlias(fila, ['tasa_anual', 'tasa']));
+    CONDICIONES.plazoMaximo = parseNumero(buscarAlias(fila, ['plazo_maximo', 'plazo'])) || 60;
+    const urlLista = buscarAlias(fila, ['url_lista', 'lista', 'url_lotes']);
+    if (urlLista) {
+      (await descargarCsv(urlLista)).forEach(l => {
+        const id = buscarAlias(l, ['lote', 'numero', 'id', 'nro']);
+        if (!id) return;
+        CONDICIONES.lotes.set(claveLote(id), {
+          precio: parseNumero(buscarAlias(l, ['precio_lista', 'precio', 'precio_contado', 'precio_de_lista'])),
+          anticipoMinimo: parseNumero(buscarAlias(l, ['anticipo_minimo', 'anticipo_desde'])) || 0,
+          superficie: parseNumero(buscarAlias(l, ['superficie', 'sup_m2', 'sup'])),
+        });
+      });
+    }
+    CONDICIONES.estado = 'ok';
+  })().catch(err => {
+    console.error('Error cargando condiciones de financiación:', err);
+    CONDICIONES.estado = 'error';
+    cargaCondiciones = null;   // se reintenta al volver a abrir
+  });
+  return cargaCondiciones;
+}
+
+/* --- Dólar oficial / blue venta (DolarAPI, con respaldo en Bluelytics) --- */
+const DOLAR = {};
+async function obtenerDolar(tipo) {   // tipo: 'oficial' | 'blue'
+  if (DOLAR[tipo]) return DOLAR[tipo];
+  try {
+    const r = await fetch(`https://dolarapi.com/v1/dolares/${tipo}`, { cache: 'no-store' });
+    const d = await r.json();
+    if (typeof d.venta !== 'number') throw new Error('sin venta');
+    return (DOLAR[tipo] = d.venta);
+  } catch (e) {
+    const r = await fetch('https://api.bluelytics.com.ar/v2/latest', { cache: 'no-store' });
+    const d = await r.json();
+    const v = d?.[tipo]?.value_sell;
+    if (typeof v !== 'number') throw new Error('No se pudo obtener el dólar ' + tipo);
+    return (DOLAR[tipo] = v);
+  }
+}
+
+/* --- Interfaz --- */
+const fin = {
+  fondo: document.getElementById('fin'),
+  lote: document.getElementById('fin-lote'),
+  superficie: document.getElementById('fin-superficie'),
+  precio: document.getElementById('fin-precio'),
+  avisoLote: document.getElementById('fin-aviso-lote'),
+  ayudaAnticipo: document.getElementById('fin-ayuda-anticipo'),
+  anticipo: document.getElementById('fin-anticipo'),
+  avisoAnticipo: document.getElementById('fin-aviso-anticipo'),
+  cuotas: document.getElementById('fin-cuotas'),
+  moneda: document.getElementById('fin-moneda'),
+  valor: document.getElementById('fin-valor'),
+  nota: document.getElementById('fin-nota'),
+};
+let finCuotas = 12, finMoneda = 'usd', finLoteActual = null, finUltimoFoco = null;
+const usd = n => 'US$ ' + Math.round(n).toLocaleString('es-AR');
+const ars = n => '$ ' + Math.round(n).toLocaleString('es-AR');
+
+function datosLote(id) {
+  const fila = DISPONIBILIDAD[id];
+  const lista = CONDICIONES.lotes.get(claveLote(id));
+  if (!fila && !lista) return null;
+  return {
+    id,
+    estado: fila ? fila[2] : 'Disponible',
+    superficie: parseNumero(fila?.[1]) ?? lista?.superficie ?? null,
+    precio: lista?.precio || parseNumero(fila?.[4]) || 0,
+    anticipoMinimo: lista?.anticipoMinimo || 0,
+  };
+}
+
+function opcionesCuotas() {
+  const max = CONDICIONES.plazoMaximo || 60;
+  const ops = [];
+  for (let n = 12; n <= max; n += 12) ops.push(n);
+  if (!ops.length || ops[ops.length - 1] !== max) ops.push(max);
+  return ops;
+}
+function pintarCuotas() {
+  const ops = opcionesCuotas();
+  if (!ops.includes(finCuotas)) finCuotas = ops[0];
+  fin.cuotas.innerHTML = ops.map(n =>
+    `<button type="button" role="radio" data-n="${n}" aria-checked="${n === finCuotas}">${n}</button>`).join('');
+}
+fin.cuotas.addEventListener('click', e => {
+  const b = e.target.closest('button[data-n]');
+  if (!b) return;
+  finCuotas = Number(b.dataset.n);
+  fin.cuotas.querySelectorAll('button').forEach(x => x.setAttribute('aria-checked', String(x === b)));
+  calcularFinanciacion();
+});
+fin.moneda.addEventListener('click', e => {
+  const b = e.target.closest('button[data-moneda]');
+  if (!b) return;
+  finMoneda = b.dataset.moneda;
+  fin.moneda.querySelectorAll('button').forEach(x => x.setAttribute('aria-checked', String(x === b)));
+  calcularFinanciacion();
+});
+
+function mostrarAvisoFin(el, texto) { el.textContent = texto || ''; el.hidden = !texto; }
+function resultadoVacio(texto) {
+  fin.valor.className = 'fin-valor vacio';
+  fin.valor.textContent = texto;
+  fin.nota.textContent = '';
+}
+
+/* Carga los datos del lote escrito en el campo. Si cambió de lote, propone el anticipo mínimo. */
+function cargarLoteFin() {
+  const id = fin.lote.value.trim();
+  const lote = id ? datosLote(id) : null;
+  const cambio = (lote?.id || null) !== finLoteActual;
+  finLoteActual = lote?.id || null;
+
+  fin.superficie.textContent = lote?.superficie ? lote.superficie.toLocaleString('es-AR') + ' m²' : '—';
+  // Igual que en el cuadrito del lote: el precio solo se muestra si está disponible
+  fin.precio.textContent = lote?.precio && lote.estado === 'Disponible' ? usd(lote.precio) : '—';
+
+  if (!id) mostrarAvisoFin(fin.avisoLote, '');
+  else if (!lote) mostrarAvisoFin(fin.avisoLote, 'No encontramos ese número de lote.');
+  else if (lote.estado !== 'Disponible') mostrarAvisoFin(fin.avisoLote, `Este lote figura como "${textoEstado(lote.estado)}".`);
+  else if (!lote.precio) mostrarAvisoFin(fin.avisoLote, 'Este lote todavía no tiene precio publicado. Consultá con un asesor.');
+  else mostrarAvisoFin(fin.avisoLote, '');
+
+  if (lote?.precio && lote.estado === 'Disponible') {
+    fin.ayudaAnticipo.textContent = lote.anticipoMinimo
+      ? `Desde un mínimo de ${usd(lote.anticipoMinimo)} hasta el valor total del lote.`
+      : 'Hasta el valor total del lote.';
+    if (cambio) fin.anticipo.value = lote.anticipoMinimo || '';
+  } else {
+    fin.ayudaAnticipo.textContent = 'Elegí un lote para ver el anticipo mínimo.';
+  }
+  calcularFinanciacion();
+}
+
+let calculoId = 0;
+async function calcularFinanciacion() {
+  const yo = ++calculoId;
+  const lote = finLoteActual ? datosLote(finLoteActual) : null;
+  const anticipo = parseFloat(fin.anticipo.value) || 0;
+  mostrarAvisoFin(fin.avisoAnticipo, '');
+
+  if (CONDICIONES.estado === 'pendiente') return resultadoVacio('Cargando condiciones de financiación…');
+  if (CONDICIONES.estado === 'error') return resultadoVacio('No pudimos cargar las condiciones de financiación. Probá de nuevo en un rato.');
+  if (!lote || lote.estado !== 'Disponible' || !lote.precio) return resultadoVacio('Elegí un lote disponible para ver la cuota.');
+
+  if (lote.anticipoMinimo && anticipo < lote.anticipoMinimo) {
+    mostrarAvisoFin(fin.avisoAnticipo, `El anticipo mínimo para este lote es de ${usd(lote.anticipoMinimo)}.`);
+    return resultadoVacio('Ajustá el anticipo para ver la cuota.');
+  }
+  if (anticipo > lote.precio) {
+    mostrarAvisoFin(fin.avisoAnticipo, `El anticipo no puede superar el precio del lote (${usd(lote.precio)}).`);
+    return resultadoVacio('Ajustá el anticipo para ver la cuota.');
+  }
+
+  const saldo = lote.precio - anticipo;
+  if (saldo <= 0) {
+    fin.valor.className = 'fin-valor';
+    fin.valor.innerHTML = 'Pago de contado<small>Con este anticipo no quedan cuotas.</small>';
+    fin.nota.textContent = '';
+    return;
+  }
+
+  const n = finCuotas;
+  const cuotaUsd = calcularCuota(saldo, tasaMensualEfectiva(CONDICIONES.tasaAnual), n);
+  const aviso = 'Valores de referencia. Las condiciones finales las confirma un asesor.';
+
+  if (finMoneda === 'usd') {
+    fin.valor.className = 'fin-valor';
+    fin.valor.innerHTML = `${usd(cuotaUsd)}<small>${n} cuotas fijas mensuales en dólares</small>`;
+    fin.nota.textContent = `Saldo a financiar: ${usd(saldo)}. ${aviso}`;
+    return;
+  }
+
+  // Pesos
+  const tipoDolar = FINANCIACION.pesos === 'cac-oficial' ? 'oficial' : 'blue';
+  if (!DOLAR[tipoDolar]) resultadoVacio('Consultando la cotización del dólar…');
+  let dolar;
+  try { dolar = await obtenerDolar(tipoDolar); }
+  catch (e) {
+    if (yo === calculoId) resultadoVacio('No pudimos obtener la cotización del dólar. Probá en US$ o más tarde.');
+    return;
+  }
+  if (yo !== calculoId) return;   // el usuario cambió algo mientras se consultaba
+
+  fin.valor.className = 'fin-valor';
+  if (FINANCIACION.pesos === 'cac-oficial') {
+    const primera = (saldo * dolar) / n;
+    fin.valor.innerHTML = `${ars(primera)}<small>Primera cuota · ${n} cuotas en pesos ajustables por CAC</small>`;
+    fin.nota.textContent =
+      `Saldo de ${usd(saldo)} convertido al dólar oficial venta de hoy (${ars(dolar)}) y dividido en ${n} cuotas. ` +
+      `Las cuotas siguientes se actualizan mes a mes según el índice CAC. ${aviso}`;
+  } else {
+    fin.valor.innerHTML = `${ars(cuotaUsd * dolar)}<small>${n} cuotas · equivalente a ${usd(cuotaUsd)}</small>`;
+    fin.nota.textContent =
+      `Calculado con el dólar blue venta de hoy (${ars(dolar)}). El monto en pesos de cada cuota ` +
+      `depende de la cotización del día de pago. ${aviso}`;
+  }
+}
+
+let debounceFin;
+fin.lote.addEventListener('input', () => { clearTimeout(debounceFin); debounceFin = setTimeout(cargarLoteFin, 300); });
+fin.anticipo.addEventListener('input', () => { clearTimeout(debounceFin); debounceFin = setTimeout(calcularFinanciacion, 250); });
+
+function abrirFinanciacion(id = null) {
+  finUltimoFoco = document.activeElement;
+  fin.fondo.hidden = false;
+  if (id != null) fin.lote.value = id;
+  pintarCuotas();
+  cargarLoteFin();
+  (id != null ? fin.anticipo : fin.lote).focus({ preventScroll: true });
+  if (CONDICIONES.estado !== 'ok') {
+    if (CONDICIONES.estado === 'error') CONDICIONES.estado = 'pendiente';
+    cargarCondiciones().then(() => {
+      if (fin.fondo.hidden) return;
+      pintarCuotas();
+      finLoteActual = null;   // para que proponga el anticipo mínimo con los datos ya cargados
+      cargarLoteFin();
+    });
+  }
+}
+function cerrarFinanciacion() {
+  fin.fondo.hidden = true;
+  if (finUltimoFoco && finUltimoFoco.focus) finUltimoFoco.focus({ preventScroll: true });
+}
+document.getElementById('abrir-financiacion').addEventListener('click', () => abrirFinanciacion());
+document.getElementById('fin-cerrar').addEventListener('click', cerrarFinanciacion);
+fin.fondo.addEventListener('click', e => { if (e.target === fin.fondo) cerrarFinanciacion(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && !fin.fondo.hidden) cerrarFinanciacion(); });
+
+cargarCondiciones();   // se adelanta la descarga para que la calculadora abra al instante
 
 /* =====================================================================
    Modo editor: index.html?editar
