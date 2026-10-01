@@ -200,13 +200,13 @@
   .btn-financiacion:hover { background: rgba(18, 26, 24, .9); }
   .btn-financiacion svg { width: 19px; height: 19px; }
   /* El visor deja los cuadritos sin interacción: se habilita para poder tocar el botón de adentro */
-  .psv-tooltip.tooltip-lote { pointer-events: auto !important; }
+  .psv-tooltip.tooltip-lote { pointer-events: auto !important; max-width: none; }   /* el visor limita a 200px y cortaba el botón */
 
   /* Botón "Calcular financiación" dentro del cuadrito del lote */
   .tooltip-lote .detalle-lote-btn {
-    display: flex; align-items: center; justify-content: center; gap: 6px; width: 100%;
+    display: flex; align-items: center; justify-content: center; gap: 6px; width: 100%; box-sizing: border-box;
     margin-top: 9px; padding: 8px 10px; border: 0; border-radius: 6px; cursor: pointer;
-    background: #C60C23; color: #fff; font: 600 .72rem 'Montserrat', Arial, sans-serif; letter-spacing: .2px;
+    background: #C60C23; color: #fff; font: 600 .72rem 'Montserrat', Arial, sans-serif; letter-spacing: .2px; white-space: nowrap;
   }
   .tooltip-lote .detalle-lote-btn:hover { background: #a10a1d; }
   .tooltip-lote .detalle-lote-btn svg { width: 14px; height: 14px; }
@@ -283,7 +283,7 @@
   .fin-moneda { flex: 0 0 auto; }
   .fin-moneda button { min-width: 60px; height: 30px; font-size: 12.5px; }
   .fin-valor {
-    padding: 14px 16px; border-radius: 12px; background: var(--fin-tinte); border-left: 4px solid var(--fin-marca);
+    padding: 14px 16px; border-radius: 12px; background: var(--fin-tinte); border: 1px solid #f1d6d9;
     font-size: 28px; font-weight: 700; color: var(--fin-texto); letter-spacing: -.01em;
     font-variant-numeric: tabular-nums;
   }
