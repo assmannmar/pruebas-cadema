@@ -1206,7 +1206,9 @@ function datosLote(id) {
     id,
     estado: fila ? fila[2] : 'Disponible',
     superficie: parseNumero(fila?.[1]) ?? lista?.superficie ?? null,
-    precio: lista?.precio || parseNumero(fila?.[4]) || 0,
+    // Mismo precio que muestra el detalle del lote (planilla del recorrido, columna E).
+    // La lista de vendedores se usa solo si el recorrido no tiene precio cargado.
+    precio: parseNumero(fila?.[4]) || lista?.precio || 0,
     anticipoMinimo: lista?.anticipoMinimo || 0,
   };
 }
