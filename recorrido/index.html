@@ -419,7 +419,7 @@ import { MarkersPlugin } from '@photo-sphere-viewer/markers-plugin';
 
 const NOMBRE_PROYECTO = "La Amelia";
 
-/* Planilla de disponibilidad (columnas A:E = lote, superficie, estado, contado, lista).
+/* Planilla de disponibilidad (columnas A:E; A = lote, B = superficie, C = estado, D = precio de lista).
    Restringí la key en Google Cloud a tu dominio (Referentes HTTP), porque queda visible. */
 const URL_PLANILLA = 'https://sheets.googleapis.com/v4/spreadsheets/1QLcE47cV3ZwKjQyr1-WyIE0ULQYTWf8VzeJjm6I3x_M/values/Lotes!A:E?key=AIzaSyCtphtCkdB2jxj6rmBUM4zTwuXB2TXPGHg';
 
@@ -840,7 +840,7 @@ function tooltipHTML(id, fila) {
     return `<div class="detalle-lote"><div class="detalle-lote-titulo">Lote ${id}</div>
       <div class="detalle-lote-fila"><span>Estado</span><span class="valor">Sin datos</span></div></div>`;
   }
-  const [, superficie, estado, , valorLista] = fila;
+  const [, superficie, estado, valorLista] = fila;   // D = precio de lista
   let filas = `
     <div class="detalle-lote-fila"><span>Superficie</span><span class="valor">${superficie} m2</span></div>
     <div class="detalle-lote-fila"><span>Estado</span><span class="valor ${claseEstado(estado)}">${textoEstado(estado)}</span></div>`;
@@ -870,7 +870,7 @@ const escaparTexto = t => String(t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<'
 
 /* ---------- Disponibilidad (planilla) ---------- */
 let estadoDatos = 'cargando';          // 'cargando' | 'ok' | 'error'
-const DISPONIBILIDAD = {};             // "id" → fila [id, superficie, estado, contado, lista]
+const DISPONIBILIDAD = {};             // "id" → fila [id, superficie, estado, precio lista, ...]
 const avisoDatos = document.getElementById('estado-datos');
 
 /* ---------- Marcadores de cada vista ---------- */
@@ -1206,9 +1206,9 @@ function datosLote(id) {
     id,
     estado: fila ? fila[2] : 'Disponible',
     superficie: parseNumero(fila?.[1]) ?? lista?.superficie ?? null,
-    // Mismo precio que muestra el detalle del lote (planilla del recorrido, columna E).
+    // Mismo precio que muestra el detalle del lote (planilla del recorrido, columna D = precio de lista).
     // La lista de vendedores se usa solo si el recorrido no tiene precio cargado.
-    precio: parseNumero(fila?.[4]) || lista?.precio || 0,
+    precio: parseNumero(fila?.[3]) || lista?.precio || 0,
     anticipoMinimo: lista?.anticipoMinimo || 0,
   };
 }
