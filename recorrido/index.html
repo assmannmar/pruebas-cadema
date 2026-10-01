@@ -199,79 +199,113 @@
   }
   .btn-financiacion:hover { background: rgba(18, 26, 24, .9); }
   .btn-financiacion svg { width: 19px; height: 19px; }
-  .tooltip-lote .detalle-lote-cta {
-    margin-top: 7px; padding-top: 6px; border-top: 1px solid #eee;
-    font-size: .7rem; font-weight: 600; color: #16467a;
-  }
+  /* El visor deja los cuadritos sin interacción: se habilita para poder tocar el botón de adentro */
+  .psv-tooltip.tooltip-lote { pointer-events: auto !important; }
 
+  /* Botón "Calcular financiación" dentro del cuadrito del lote */
+  .tooltip-lote .detalle-lote-btn {
+    display: flex; align-items: center; justify-content: center; gap: 6px; width: 100%;
+    margin-top: 9px; padding: 8px 10px; border: 0; border-radius: 6px; cursor: pointer;
+    background: #C60C23; color: #fff; font: 600 .72rem 'Montserrat', Arial, sans-serif; letter-spacing: .2px;
+  }
+  .tooltip-lote .detalle-lote-btn:hover { background: #a10a1d; }
+  .tooltip-lote .detalle-lote-btn svg { width: 14px; height: 14px; }
+
+  /* Panel de financiación con la identidad de CADEMA (rojo del isotipo) */
   .fin-fondo {
-    --fin-azul: #16467a; --fin-texto: #1d2733; --fin-suave: #6b7480; --fin-linea: #d5d9de;
+    --fin-marca: #C60C23; --fin-marca-oscuro: #9c0a1c; --fin-tinte: #fbf1f2;
+    --fin-texto: #1f1d1d; --fin-suave: #6e6766; --fin-linea: #e4dddc;
     position: fixed; inset: 0; z-index: 40; display: grid; place-items: center; padding: 16px;
-    background: rgba(8, 12, 11, .5);
+    background: rgba(8, 12, 11, .55);
   }
   .fin-fondo[hidden] { display: none; }
   .fin-card {
     position: relative; width: min(460px, 100%); max-height: calc(100dvh - 32px); overflow: auto;
-    padding: 26px 26px 22px; border-radius: 22px; background: #fff; color: var(--fin-texto);
-    font-family: var(--fuente); box-shadow: 0 18px 50px rgba(0,0,0,.35);
+    border-radius: 20px; background: #fff; color: var(--fin-texto);
+    font-family: 'Montserrat', var(--fuente); box-shadow: 0 18px 50px rgba(0,0,0,.35);
   }
-  .fin-card h2 { margin: 0 34px 4px 0; font-size: 21px; font-weight: 700; color: var(--fin-azul); letter-spacing: -.01em; }
-  .fin-card .fin-sub { margin: 0 0 18px; font-size: 13px; color: var(--fin-suave); }
+  .fin-encabezado {
+    display: flex; align-items: center; gap: 12px; padding: 18px 64px 16px 22px;
+    border-bottom: 3px solid var(--fin-marca);
+  }
+  .fin-encabezado img { width: 42px; height: 42px; flex: 0 0 auto; }
+  .fin-encabezado small {
+    display: block; font-size: 11px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: var(--fin-marca);
+  }
+  .fin-card h2 { margin: 2px 0 0; font-size: 19px; font-weight: 600; color: var(--fin-texto); letter-spacing: -.01em; }
+  .fin-cuerpo { padding: 18px 22px 22px; }
+  .fin-card .fin-sub { margin: 0 0 16px; font-size: 12.5px; color: var(--fin-suave); }
   .fin-card section + section { margin-top: 20px; }
-  .fin-card h3 { margin: 0 0 6px; font-size: 17px; font-weight: 700; color: var(--fin-azul); }
-  .fin-cerrar {
-    position: absolute; top: 16px; right: 16px; width: 34px; height: 34px; border: 0; border-radius: 50%;
-    display: grid; place-items: center; cursor: pointer; background: #eef1f4; color: var(--fin-texto);
+  .fin-card h3 {
+    margin: 0 0 6px; font-size: 12px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--fin-marca);
   }
+  .fin-cerrar {
+    position: absolute; top: 22px; right: 18px; width: 34px; height: 34px; border: 0; border-radius: 50%;
+    display: grid; place-items: center; cursor: pointer; background: #f2eeed; color: var(--fin-texto);
+  }
+  .fin-cerrar:hover { background: #e8e1e0; }
   .fin-cerrar svg { width: 16px; height: 16px; }
   .fin-fila {
     display: flex; align-items: baseline; justify-content: space-between; gap: 12px;
     padding: 9px 0 7px; border-bottom: 1px solid var(--fin-linea); font-size: 14px;
   }
   .fin-fila > span { color: var(--fin-suave); white-space: nowrap; }
-  .fin-fila b { font-weight: 700; text-align: right; }
+  .fin-fila b { font-weight: 600; text-align: right; }
   .fin-fila input {
     flex: 1; min-width: 0; border: 0; outline: 0; background: transparent; text-align: right;
-    font: 700 15px var(--fuente); color: var(--fin-texto);
+    font: 600 15px 'Montserrat', var(--fuente); color: var(--fin-texto);
   }
-  .fin-fila:focus-within { border-bottom-color: var(--fin-azul); }
-  .fin-fila input::placeholder { color: #b3b9c0; font-weight: 500; }
+  .fin-fila-editable { cursor: text; }
+  .fin-fila-editable input { color: var(--fin-marca); }
+  .fin-fila-editable svg { width: 14px; height: 14px; flex: 0 0 auto; align-self: center; color: var(--fin-suave); }
+  .fin-fila:focus-within { border-bottom-color: var(--fin-marca); }
+  .fin-fila input::placeholder { color: #bcb4b3; font-weight: 500; }
   .fin-fila input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
   .fin-fila input::-webkit-outer-spin-button, .fin-fila input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
-  .fin-ayuda { margin: 0 0 4px; font-size: 13px; line-height: 1.4; color: var(--fin-suave); }
-  .fin-aviso { margin: 8px 0 0; font-size: 12.5px; line-height: 1.4; color: #a4471f; }
+  .fin-ayuda { margin: 0 0 4px; font-size: 12.5px; line-height: 1.4; color: var(--fin-suave); }
+  .fin-aviso { margin: 8px 0 0; font-size: 12.5px; line-height: 1.4; color: var(--fin-marca-oscuro); }
   .fin-aviso[hidden] { display: none; }
 
   .fin-opciones {
     display: flex; flex-wrap: wrap; padding: 3px; gap: 2px;
-    border: 1px solid var(--fin-azul); border-radius: 12px;
+    border: 1px solid var(--fin-linea); border-radius: 10px; background: #faf8f8;
   }
   .fin-opciones button {
-    flex: 1 1 0; min-width: 44px; height: 40px; border: 0; border-radius: 9px; cursor: pointer;
-    background: transparent; color: var(--fin-azul); font: 600 15px var(--fuente);
+    flex: 1 1 0; min-width: 44px; height: 40px; border: 0; border-radius: 8px; cursor: pointer;
+    background: transparent; color: var(--fin-texto); font: 600 14px 'Montserrat', var(--fuente);
   }
-  .fin-opciones button[aria-checked="true"] { background: var(--fin-azul); color: #fff; }
-  .fin-opciones button:focus-visible { outline: 2px solid var(--fin-azul); outline-offset: 1px; }
+  .fin-opciones button:hover { background: #f1ecec; }
+  .fin-opciones button[aria-checked="true"] { background: var(--fin-marca); color: #fff; }
+  .fin-opciones button:focus-visible { outline: 2px solid var(--fin-marca); outline-offset: 1px; }
 
-  .fin-resultado { padding-top: 4px; }
   .fin-resultado .fin-cabecera { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 8px; }
   .fin-resultado .fin-cabecera h3 { margin: 0; }
   .fin-moneda { flex: 0 0 auto; }
-  .fin-moneda button { min-width: 64px; height: 32px; font-size: 13px; }
+  .fin-moneda button { min-width: 60px; height: 30px; font-size: 12.5px; }
   .fin-valor {
-    padding: 14px 16px; border-radius: 14px; background: #f1f5f9;
-    font-size: 30px; font-weight: 700; color: var(--fin-azul); letter-spacing: -.01em;
+    padding: 14px 16px; border-radius: 12px; background: var(--fin-tinte); border-left: 4px solid var(--fin-marca);
+    font-size: 28px; font-weight: 700; color: var(--fin-texto); letter-spacing: -.01em;
     font-variant-numeric: tabular-nums;
   }
-  .fin-valor small { display: block; margin-top: 2px; font-size: 13px; font-weight: 600; color: var(--fin-suave); letter-spacing: 0; }
-  .fin-valor.vacio { font-size: 14px; font-weight: 500; color: var(--fin-suave); }
-  .fin-nota { margin: 10px 0 0; font-size: 12px; line-height: 1.45; color: var(--fin-suave); }
+  .fin-valor small { display: block; margin-top: 2px; font-size: 12.5px; font-weight: 500; color: var(--fin-suave); letter-spacing: 0; }
+  .fin-valor.vacio { font-size: 13.5px; font-weight: 500; color: var(--fin-suave); }
+  .fin-nota { margin: 10px 0 0; font-size: 11.5px; line-height: 1.45; color: var(--fin-suave); }
+
+  .fin-descargar {
+    display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%;
+    margin-top: 16px; height: 46px; border: 0; border-radius: 10px; cursor: pointer;
+    background: var(--fin-marca); color: #fff; font: 600 14.5px 'Montserrat', var(--fuente);
+  }
+  .fin-descargar:hover { background: var(--fin-marca-oscuro); }
+  .fin-descargar:disabled { background: #d9d2d1; color: #fff; cursor: not-allowed; }
+  .fin-descargar svg { width: 18px; height: 18px; }
 
   @media (max-width: 560px) {
     .btn-financiacion span { display: none; }
     .btn-financiacion { width: 46px; padding: 0; justify-content: center; }
-    .fin-card { padding: 22px 18px 18px; }
-    .fin-valor { font-size: 26px; }
+    .fin-encabezado { padding: 16px 60px 14px 18px; }
+    .fin-cuerpo { padding: 16px 18px 18px; }
+    .fin-valor { font-size: 25px; }
   }
 
   @media (max-width: 560px) {
@@ -315,12 +349,20 @@
     <button class="fin-cerrar" id="fin-cerrar" type="button" aria-label="Cerrar">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
     </button>
-    <h2 id="fin-titulo">Calculá tu financiación</h2>
+    <div class="fin-encabezado">
+      <img id="fin-logo" alt="CADEMA">
+      <div>
+        <small id="fin-barrio">CADEMA</small>
+        <h2 id="fin-titulo">Calculá tu financiación</h2>
+      </div>
+    </div>
+
+    <div class="fin-cuerpo">
     <p class="fin-sub">Simulación de referencia. Un asesor te confirma el plan final.</p>
 
     <section>
       <h3>Información del lote</h3>
-      <label class="fin-fila"><span>Número de lote</span><input id="fin-lote" type="text" inputmode="numeric" placeholder="Ej: 12" autocomplete="off"></label>
+      <label class="fin-fila fin-fila-editable"><span>Número de lote</span><input id="fin-lote" type="text" inputmode="numeric" placeholder="Ej: 12" autocomplete="off" title="Podés cambiarlo para ver otro lote"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16v4zM14 6l4 4"/></svg></label>
       <div class="fin-fila"><span>Superficie</span><b id="fin-superficie">—</b></div>
       <div class="fin-fila"><span>Precio</span><b id="fin-precio">—</b></div>
       <p class="fin-aviso" id="fin-aviso-lote" hidden></p>
@@ -348,7 +390,12 @@
       </div>
       <div class="fin-valor vacio" id="fin-valor" aria-live="polite">Completá los datos para ver la cuota.</div>
       <p class="fin-nota" id="fin-nota"></p>
+      <button class="fin-descargar" id="fin-descargar" type="button" disabled>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>
+        Descargar simulación (PDF)
+      </button>
     </section>
+    </div>
   </div>
 </div>
 
@@ -799,7 +846,10 @@ function tooltipHTML(id, fila) {
     <div class="detalle-lote-fila"><span>Estado</span><span class="valor ${claseEstado(estado)}">${textoEstado(estado)}</span></div>`;
   if (estado === 'Disponible') {
     filas += `<div class="detalle-lote-fila"><span>Precio Lista</span><span class="valor">${valorLista}</span></div>
-      <div class="detalle-lote-cta">Tocá el lote para calcular la financiación</div>`;
+      <button type="button" class="detalle-lote-btn" data-fin-lote="${escaparTexto(id)}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="3" width="14" height="18" rx="2.5"/><path d="M8.5 7h7M8.5 11h1M12 11h1M8.5 14.5h1M12 14.5h1M15.5 11v6.5"/></svg>
+        Calcular financiación
+      </button>`;
   }
   return `<div class="detalle-lote"><div class="detalle-lote-titulo">Lote ${id}</div>${filas}</div>`;
 }
@@ -916,13 +966,6 @@ marcadores.addEventListener('select-marker', ({ marker }) => {
   if (marker.data?.tipo === 'salto') { cerrarDetalle(); irA(marker.data.a, marker.config.position); return; }
   if (marker.data?.tipo === 'lote') {
     ultimoToqueLote = Date.now();
-    // Lote disponible: se abre directamente la calculadora con ese lote cargado
-    if (DISPONIBILIDAD[marker.data.id]?.[2] === 'Disponible') {
-      cerrarDetalle();
-      try { marcadores.hideMarkerTooltip(marker.id); } catch (e) {}
-      abrirFinanciacion(marker.data.id);
-      return;
-    }
     if (loteAbierto && loteAbierto !== marker.id) cerrarDetalle();
     loteAbierto = marker.id;
     marcadores.showMarkerTooltip(marker.id);
@@ -1148,8 +1191,10 @@ const fin = {
   moneda: document.getElementById('fin-moneda'),
   valor: document.getElementById('fin-valor'),
   nota: document.getElementById('fin-nota'),
+  descargar: document.getElementById('fin-descargar'),
 };
 let finCuotas = 12, finMoneda = 'usd', finLoteActual = null, finUltimoFoco = null;
+let finResultado = null;   // último cálculo válido, para el PDF
 const usd = n => 'US$ ' + Math.round(n).toLocaleString('es-AR');
 const ars = n => '$ ' + Math.round(n).toLocaleString('es-AR');
 
@@ -1235,6 +1280,8 @@ async function calcularFinanciacion() {
   const lote = finLoteActual ? datosLote(finLoteActual) : null;
   const anticipo = parseFloat(fin.anticipo.value) || 0;
   mostrarAvisoFin(fin.avisoAnticipo, '');
+  finResultado = null;
+  fin.descargar.disabled = true;
 
   if (CONDICIONES.estado === 'pendiente') return resultadoVacio('Cargando condiciones de financiación…');
   if (CONDICIONES.estado === 'error') return resultadoVacio('No pudimos cargar las condiciones de financiación. Probá de nuevo en un rato.');
@@ -1254,12 +1301,16 @@ async function calcularFinanciacion() {
     fin.valor.className = 'fin-valor';
     fin.valor.innerHTML = 'Pago de contado<small>Con este anticipo no quedan cuotas.</small>';
     fin.nota.textContent = '';
+    finResultado = { lote, anticipo, saldo: 0, n: 0, cuotaUsd: 0 };
+    fin.descargar.disabled = false;
     return;
   }
 
   const n = finCuotas;
   const cuotaUsd = calcularCuota(saldo, tasaMensualEfectiva(CONDICIONES.tasaAnual), n);
   const aviso = 'Valores de referencia. Las condiciones finales las confirma un asesor.';
+  finResultado = { lote, anticipo, saldo, n, cuotaUsd };
+  fin.descargar.disabled = false;
 
   if (finMoneda === 'usd') {
     fin.valor.className = 'fin-valor';
@@ -1325,6 +1376,158 @@ fin.fondo.addEventListener('click', e => { if (e.target === fin.fondo) cerrarFin
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && !fin.fondo.hidden) cerrarFinanciacion(); });
 
 cargarCondiciones();   // se adelanta la descarga para que la calculadora abra al instante
+
+/* --- Identidad: isotipo de CADEMA (el mismo del simulador interno) --- */
+const LOGO_CADEMA = 'data:image/png;base64,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';
+document.getElementById('fin-logo').src = LOGO_CADEMA;
+document.getElementById('fin-barrio').textContent = 'CADEMA · ' + NOMBRE_PROYECTO;
+
+/* --- Botón "Calcular financiación" dentro del cuadrito del lote ---
+   Se escucha en fase de captura para que el visor no tome el toque como un arrastre de la foto. */
+['pointerdown', 'mousedown', 'touchstart'].forEach(tipo =>
+  document.addEventListener(tipo, e => { if (e.target.closest?.('[data-fin-lote]')) e.stopPropagation(); }, { capture: true, passive: true }));
+document.addEventListener('click', e => {
+  const b = e.target.closest?.('[data-fin-lote]');
+  if (!b) return;
+  e.stopPropagation();
+  e.preventDefault();
+  const id = b.dataset.finLote;
+  cerrarDetalle();
+  try { marcadores.hideMarkerTooltip('lote-' + id); } catch (err) {}
+  abrirFinanciacion(id);
+}, true);
+
+/* --- Descarga del cálculo en PDF --- */
+let cargaJsPDF = null;
+function cargarJsPDF() {
+  if (window.jspdf?.jsPDF) return Promise.resolve(window.jspdf.jsPDF);
+  if (!cargaJsPDF) {
+    cargaJsPDF = new Promise((ok, mal) => {
+      const sc = document.createElement('script');
+      sc.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+      sc.onload = () => ok(window.jspdf.jsPDF);
+      sc.onerror = () => { cargaJsPDF = null; mal(new Error('No se pudo cargar jsPDF')); };
+      document.head.appendChild(sc);
+    });
+  }
+  return cargaJsPDF;
+}
+
+const nombreArchivo = t => String(t).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
+  .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'plan';
+
+async function descargarPDF() {
+  if (!finResultado) return;
+  const r = finResultado;
+  const boton = fin.descargar;
+  const textoBoton = boton.innerHTML;
+  boton.disabled = true;
+  boton.textContent = 'Generando PDF…';
+  try {
+    const jsPDF = await cargarJsPDF();
+
+    // Cuota en pesos (si no se puede obtener la cotización, el PDF sale solo en US$)
+    const tipoDolar = FINANCIACION.pesos === 'cac-oficial' ? 'oficial' : 'blue';
+    let dolar = null;
+    if (r.n > 0) { try { dolar = await obtenerDolar(tipoDolar); } catch (e) {} }
+
+    const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+    const W = doc.internal.pageSize.getWidth();
+    const M = 20;                 // margen
+    const ROJO = [198, 12, 35], TEXTO = [31, 29, 29], SUAVE = [110, 103, 102], LINEA = [228, 221, 220];
+    const hoy = new Date().toLocaleDateString('es-AR');
+
+    // Encabezado
+    doc.setFillColor(...ROJO); doc.rect(0, 0, W, 4, 'F');
+    doc.addImage(LOGO_CADEMA, 'PNG', M, 14, 16, 16);
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(9); doc.setTextColor(...ROJO);
+    doc.text('CADEMA  ·  ' + NOMBRE_PROYECTO.toUpperCase(), M + 21, 19);
+    doc.setFontSize(18); doc.setTextColor(...TEXTO);
+    doc.text('Simulación de financiación', M + 21, 27);
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor(...SUAVE);
+    doc.text(hoy, W - M, 19, { align: 'right' });
+    doc.setDrawColor(...ROJO); doc.setLineWidth(0.8); doc.line(M, 36, W - M, 36);
+
+    let y = 48;
+    const titulo = t => {
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(9); doc.setTextColor(...ROJO);
+      doc.text(t.toUpperCase(), M, y); y += 4;
+    };
+    const fila = (etiqueta, valor) => {
+      y += 6;
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(11); doc.setTextColor(...SUAVE);
+      doc.text(etiqueta, M, y);
+      doc.setFont('helvetica', 'bold'); doc.setTextColor(...TEXTO);
+      doc.text(valor, W - M, y, { align: 'right' });
+      y += 3;
+      doc.setDrawColor(...LINEA); doc.setLineWidth(0.3); doc.line(M, y, W - M, y);
+    };
+
+    titulo('Información del lote');
+    fila('Barrio', NOMBRE_PROYECTO);
+    fila('Lote', String(r.lote.id));
+    if (r.lote.superficie) fila('Superficie', r.lote.superficie.toLocaleString('es-AR') + ' m²');
+    fila('Precio', usd(r.lote.precio));
+
+    y += 12;
+    titulo('Plan de pago');
+    fila('Anticipo', usd(r.anticipo));
+    fila('Saldo a financiar', usd(r.saldo));
+    fila('Cantidad de cuotas', r.n ? String(r.n) : 'Pago de contado');
+
+    // Recuadro con el valor de la cuota
+    y += 12;
+    const alto = r.n && dolar ? 40 : 26;
+    doc.setFillColor(251, 241, 242); doc.roundedRect(M, y, W - 2 * M, alto, 3, 3, 'F');
+    doc.setFillColor(...ROJO); doc.rect(M, y, 1.6, alto, 'F');
+    let yb = y + 9;
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(9); doc.setTextColor(...ROJO);
+    doc.text('VALOR DE CUOTA', M + 8, yb);
+    yb += 9;
+    doc.setFontSize(20); doc.setTextColor(...TEXTO);
+    if (r.n) {
+      doc.text(usd(r.cuotaUsd), M + 8, yb);
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(10); doc.setTextColor(...SUAVE);
+      doc.text(`${r.n} cuotas fijas mensuales en dólares`, W - M - 8, yb, { align: 'right' });
+      if (dolar) {
+        yb += 11;
+        const pesos = FINANCIACION.pesos === 'cac-oficial' ? (r.saldo * dolar) / r.n : r.cuotaUsd * dolar;
+        doc.setFont('helvetica', 'bold'); doc.setFontSize(16); doc.setTextColor(...TEXTO);
+        doc.text(ars(pesos), M + 8, yb);
+        doc.setFont('helvetica', 'normal'); doc.setFontSize(10); doc.setTextColor(...SUAVE);
+        doc.text(FINANCIACION.pesos === 'cac-oficial' ? 'Primera cuota en pesos (ajusta por CAC)' : 'Equivalente en pesos',
+          W - M - 8, yb, { align: 'right' });
+      }
+    } else {
+      doc.text('Pago de contado', M + 8, yb);
+    }
+    y += alto + 12;
+
+    // Notas
+    const notas = [];
+    if (r.n && dolar) {
+      notas.push(FINANCIACION.pesos === 'cac-oficial'
+        ? `La cuota en pesos surge de convertir el saldo a financiar al dólar oficial venta del ${hoy} (${ars(dolar)}) y dividirlo en ${r.n} cuotas. Las cuotas siguientes se actualizan mes a mes según el índice CAC.`
+        : `La cuota en pesos se calculó con el dólar blue venta del ${hoy} (${ars(dolar)}). El monto en pesos de cada cuota depende de la cotización del día de pago.`);
+    }
+    notas.push('Simulación de referencia generada desde el recorrido virtual. No constituye una oferta: las condiciones finales, la disponibilidad y los precios los confirma un asesor de CADEMA.');
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor(...SUAVE);
+    notas.forEach(t => {
+      const lineas = doc.splitTextToSize(t, W - 2 * M);
+      doc.text(lineas, M, y);
+      y += lineas.length * 4.2 + 3;
+    });
+
+    doc.save(`simulacion_${nombreArchivo(NOMBRE_PROYECTO)}_lote-${nombreArchivo(r.lote.id)}.pdf`);
+  } catch (e) {
+    console.error(e);
+    alert('No se pudo generar el PDF. Revisá tu conexión y probá de nuevo.');
+  } finally {
+    boton.innerHTML = textoBoton;
+    boton.disabled = !finResultado;
+  }
+}
+fin.descargar.addEventListener('click', descargarPDF);
 
 /* =====================================================================
    Modo editor: index.html?editar
