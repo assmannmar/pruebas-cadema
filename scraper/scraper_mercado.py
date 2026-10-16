@@ -23,7 +23,7 @@ Uso:
     python scraper_mercado.py                 # foto completa
     python scraper_mercado.py --prueba        # 1 página por búsqueda, para probar
     python scraper_mercado.py --sin-detalle   # sólo listados (más rápido)
-    python scraper_mercado.py --ver           # muestra el navegador (si el headless es bloqueado)
+    python scraper_mercado.py --oculto        # sin mostrar el navegador (más CAPTCHAs)
     python scraper_mercado.py --solo-subir datos/foto_2026-10.csv   # re-subir una foto al Sheet
 """
 
@@ -62,7 +62,11 @@ BUSQUEDAS = [
 SHEET_URL = "https://script.google.com/macros/s/AKfycbwZE29z6X73aDSDHsxYs5Oghml-JTEPoJmeOhu1WD2VDA1bQwd7ZLMx42HipByJZvc/exec"
 SHEET_TOKEN = "scraper-argenprop"
 
-PAUSA_SEG = (1.2, 2.5)        # pausa aleatoria entre pedidos
+PAUSA_SEG = (3.0, 6.0)        # pausa aleatoria entre pedidos (más lento = menos CAPTCHAs)
+PAUSA_LARGA_CADA = 25         # cada N pedidos, un descanso más largo…
+PAUSA_LARGA_SEG = (40, 80)    # …de 40 a 80 segundos
+DETALLE_MAX_POR_CORRIDA = 800 # fichas nuevas por corrida; el resto se completa en la siguiente
+ESPERA_CAPTCHA_MIN = 15       # minutos que espera a que resuelvas un CAPTCHA en la ventana
 AVISOS_POR_PAGINA = 20
 CARPETA = Path(__file__).resolve().parent / "datos"
 
@@ -219,9 +223,10 @@ def clasificar_zona(*textos) -> str:
 
 
 class Navegador:
-    """Chromium real: resuelve solo el desafío anti-bots y reutiliza la cookie para pedidos rápidos."""
+    """Chromium real. Pasa solo el desafío anti-bots; si Argenprop pide CAPTCHA,
+    espera a que lo resuelvas en la ventana y sigue."""
 
-    def __init__(self, visible=False):
+    def __init__(self, visible=True):
         from playwright.sync_api import sync_playwright
         self._pw = sync_playwright().start()
         self.browser = self._pw.chromium.launch(
@@ -230,38 +235,77 @@ class Navegador:
             locale="es-AR",
             user_agent=("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
                         "(KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36"),
-            viewport={"width": 1366, "height": 900})
+            viewport={"width": 1280, "height": 860})
         self.page = self.ctx.new_page()
-        self.page.route(re.compile(r"\.(png|jpe?g|webp|gif|svg|woff2?)(\?|$)"), lambda r: r.abort())
-        self._resolver_desafio(BASE_URL + BUSQUEDAS[0][2])
+        self.pedidos = 0
+        self._navegar(BASE_URL + BUSQUEDAS[0][2])
 
-    def _resolver_desafio(self, url):
-        """Navega con el navegador completo (corre el JS del desafío y obtiene la cookie aws-waf-token)."""
-        self.page.goto(url, wait_until="domcontentloaded", timeout=60_000)
+    @staticmethod
+    def _ok(html: str) -> bool:
+        return "data-item-card" in html or "titlebar" in html or "property-description" in html
+
+    def _navegar(self, url) -> str:
+        """Abre la URL en la ventana. Si aparece un CAPTCHA, espera a que lo resuelvas."""
         try:
-            self.page.wait_for_selector(".listing__item, .titlebar, .property-description", timeout=30_000)
+            self.page.goto(url, wait_until="domcontentloaded", timeout=60_000)
         except Exception:
             pass
-        return self.page.content()
+        try:
+            self.page.wait_for_selector(".listing__item, .titlebar, .property-description", timeout=20_000)
+            return self.page.content()
+        except Exception:
+            pass
+        html = self.page.content()
+        if self._ok(html):
+            return html
+        # CAPTCHA → avisar y esperar
+        print("\a")
+        print("  ┌──────────────────────────────────────────────────────────────┐")
+        print("  │  Argenprop pide verificar que sos humana (CAPTCHA).            │")
+        print("  │  Resolvelo en la ventana del navegador que se abrió.           │")
+        print("  │  Cuando lo resuelvas, el proceso sigue solo.                   │")
+        print("  └──────────────────────────────────────────────────────────────┘", flush=True)
+        try:
+            self.page.bring_to_front()
+        except Exception:
+            pass
+        limite = time.time() + ESPERA_CAPTCHA_MIN * 60
+        while time.time() < limite:
+            time.sleep(3)
+            try:
+                html = self.page.content()
+            except Exception:
+                continue
+            if self._ok(html):
+                print("  ✓ Verificado, sigo…", flush=True)
+                time.sleep(3)
+                return self.page.content()
+        return ""
 
     def get(self, url: str) -> str | None:
-        for intento in range(4):
+        self.pedidos += 1
+        if self.pedidos % PAUSA_LARGA_CADA == 0:
+            t = random.uniform(*PAUSA_LARGA_SEG)
+            print(f"\n    · descanso de {int(t)} s para no saturar a Argenprop…", flush=True)
+            time.sleep(t)
+        for intento in range(3):
             try:
                 r = self.ctx.request.get(url, timeout=45_000)
                 body = r.text()
-                if r.status == 200 and len(body) > 5000:
+                if r.status == 200 and self._ok(body):
                     return body
                 if r.status == 404:
                     return None
-                # 202/403/429 → desafío anti-bots: resolverlo con el navegador y reintentar
-                print(f"    · desafío anti-bots (HTTP {r.status}), resolviendo…", flush=True)
-                html = self._resolver_desafio(url)
-                if "data-item-card" in html or "titlebar" in html:
-                    return html
+                print(f"\n    · Argenprop frenó el pedido (HTTP {r.status}); abro la página en el navegador…", flush=True)
             except Exception as e:  # red, timeout
-                print(f"    · error {type(e).__name__}: {e}", flush=True)
-            time.sleep(10 * (intento + 1))
-        raise RuntimeError(f"No pude leer {url} (bloqueado). Probá con --ver o más tarde.")
+                print(f"\n    · error de red: {type(e).__name__}", flush=True)
+            html = self._navegar(url)
+            if self._ok(html):
+                return html
+            espera = 120 * (intento + 1)
+            print(f"    · sigue bloqueado; espero {espera // 60} min y reintento…", flush=True)
+            time.sleep(espera)
+        raise RuntimeError(f"Argenprop sigue bloqueando ({url}). Esperá un rato y volvé a correrlo: sigue desde donde quedó.")
 
     def cerrar(self):
         try:
@@ -295,38 +339,61 @@ def escribir_csv(path: Path, filas: list[dict], cols: list[str], agregar=False):
 # ───────────────────────────── FLUJO ─────────────────────────────
 
 
-def sacar_foto(prueba=False, con_detalle=True, visible=False) -> Path:
+def sacar_foto(prueba=False, con_detalle=True, visible=True) -> Path:
     CARPETA.mkdir(exist_ok=True)
     hoy = date.today()
     foto, fecha = hoy.strftime("%Y-%m"), hoy.isoformat()
     print(f"\n=== Foto {foto} ({FUENTE}) ===")
 
+    # Avance guardado: si se corta, al volver a correr retoma los listados de esta foto
+    prog_path = CARPETA / f"_avance_{foto}{'_prueba' if prueba else ''}.json"
+    prog = {"hechas": [], "filas": []}
+    if prog_path.exists():
+        try:
+            prog = json.loads(prog_path.read_text(encoding="utf-8"))
+            print(f"Retomo la foto: {len(prog['hechas'])} páginas ya leídas, {len(prog['filas'])} avisos.")
+        except Exception:
+            pass
+    filas = prog["filas"]
+    vistos = {f["id_aviso"] for f in filas}
+    hechas = set(prog["hechas"])
+
+    def guardar_avance():
+        prog_path.write_text(json.dumps({"hechas": sorted(hechas), "filas": filas}, ensure_ascii=False),
+                             encoding="utf-8")
+
     nav = Navegador(visible=visible)
-    filas, vistos = [], set()
     try:
         # 1) Listados
         for ciudad, tipo, ruta in BUSQUEDAS:
             pagina, total_pag = 1, 1
             while pagina <= total_pag:
+                clave = f"{ruta}|{pagina}"
                 url = BASE_URL + ruta + (f"?pagina-{pagina}" if pagina > 1 else "")
-                html = nav.get(url) or ""
-                res = parse_listado(html)
+                if pagina == 1 or clave not in hechas:
+                    html = nav.get(url) or ""
+                    res = parse_listado(html)
+                else:
+                    res = None  # ya leída en una corrida anterior
                 if pagina == 1:
                     total_pag = max(1, math.ceil((res["total"] or 0) / AVISOS_POR_PAGINA))
                     if prueba:
                         total_pag = 1
                     print(f"{ciudad} / {tipo}: {res['total']} avisos, {total_pag} páginas")
-                if not res["avisos"]:
-                    break
-                for i, a in enumerate(res["avisos"], 1):
-                    if a["id"] in vistos:
-                        continue
-                    vistos.add(a["id"])
-                    filas.append({**a, "id_aviso": a["id"], "ciudad": ciudad, "tipo": tipo,
-                                  "pagina": pagina, "posicion": i})
-                print(f"  pág. {pagina}/{total_pag} · acumulado {len(filas)}", end="\r", flush=True)
+                if res is not None:
+                    if not res["avisos"]:
+                        break
+                    for i, a in enumerate(res["avisos"], 1):
+                        if a["id"] in vistos:
+                            continue
+                        vistos.add(a["id"])
+                        filas.append({**a, "id_aviso": a["id"], "ciudad": ciudad, "tipo": tipo,
+                                      "pagina": pagina, "posicion": i})
+                    hechas.add(clave)
+                    guardar_avance()
+                    pausa()
+                print(f"  pág. {pagina}/{total_pag} · acumulado {len(filas)}   ", end="\r", flush=True)
                 pagina += 1
-                pausa()
             print()
 
         # 2) Fichas de avisos nuevos (caché)
@@ -334,9 +401,11 @@ def sacar_foto(prueba=False, con_detalle=True, visible=False) -> Path:
         cache = {r["id_aviso"]: r for r in leer_csv(cache_path)}
         if con_detalle:
             pendientes = [f for f in filas if f["id_aviso"] not in cache]
-            if prueba:
-                pendientes = pendientes[:5]
-            print(f"Fichas nuevas a visitar: {len(pendientes)} (ya en caché: {len(filas) - len(pendientes)})")
+            total_pend = len(pendientes)
+            pendientes = pendientes[:5] if prueba else pendientes[:DETALLE_MAX_POR_CORRIDA]
+            print(f"Fichas: {len(filas) - total_pend} ya guardadas · {total_pend} nuevas · visito {len(pendientes)} en esta corrida")
+            if total_pend > len(pendientes) and not prueba:
+                print(f"  (las otras {total_pend - len(pendientes)} se completan la próxima vez que lo corras)")
             nuevos = []
             for n, f in enumerate(pendientes, 1):
                 html = nav.get(f["url"])
@@ -407,6 +476,10 @@ def sacar_foto(prueba=False, con_detalle=True, visible=False) -> Path:
         base_path = CARPETA / "base.csv"
         previas = [r for r in leer_csv(base_path) if r.get("foto") != foto]  # re-correr el mes reemplaza
         escribir_csv(base_path, previas + salida, COLS_BASE)
+    try:
+        prog_path.unlink()
+    except Exception:
+        pass
     print(f"Listo: {len(salida)} avisos → {path_foto}")
     return path_foto
 
@@ -448,7 +521,8 @@ def main():
     ap = argparse.ArgumentParser(description="Foto de mercado Argenprop")
     ap.add_argument("--prueba", action="store_true", help="1 página por búsqueda y 5 fichas")
     ap.add_argument("--sin-detalle", action="store_true", help="no visitar fichas")
-    ap.add_argument("--ver", action="store_true", help="mostrar el navegador")
+    ap.add_argument("--oculto", action="store_true", help="no mostrar el navegador (puede generar más CAPTCHAs)")
+    ap.add_argument("--ver", action="store_true", help=argparse.SUPPRESS)  # compatibilidad
     ap.add_argument("--solo-subir", metavar="CSV", help="sólo subir un CSV ya generado al Sheet")
     a = ap.parse_args()
 
@@ -456,7 +530,7 @@ def main():
         subir_a_sheet(Path(a.solo_subir))
         return
     t0 = datetime.now()
-    path = sacar_foto(prueba=a.prueba, con_detalle=not a.sin_detalle, visible=a.ver)
+    path = sacar_foto(prueba=a.prueba, con_detalle=not a.sin_detalle, visible=not a.oculto)
     if not a.prueba:
         subir_a_sheet(path)
     print(f"Tiempo total: {datetime.now() - t0}")
